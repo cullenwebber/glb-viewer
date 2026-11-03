@@ -7,7 +7,7 @@ GitHub Actions builds Mac installers from this repository. `Checks` runs on push
 1. Update `package.json` and `package-lock.json` with the same semantic version.
 2. Update `docs/release-notes.md`.
 3. Run `npm test`, commit, and push.
-4. Tag that commit (`git tag v1.1.0`) and push the tag (`git push origin v1.1.0`). The workflow verifies that the tag matches the package version, tests the app, and builds DMG and ZIP downloads for Apple Silicon and Intel.
+4. Tag that commit (`git tag v1.1.1`) and push the tag (`git push origin v1.1.1`). The workflow verifies that the tag matches the package version, tests the app, and builds DMG and ZIP downloads for Apple Silicon and Intel.
 5. Open the workflow run and release page to verify the downloads.
 
 Installers use `GLB-Viewer-<version>-<arch>.dmg` and `.zip`. Release metadata and blockmaps accompany them for electron-updater. Never replace release files with different binaries under the same version. Publish a new version for a fix.

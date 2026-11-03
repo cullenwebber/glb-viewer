@@ -1,4 +1,4 @@
-## GLB Viewer 1.1.0
+## GLB Viewer 1.1.1
 
 A local-first Mac workspace for preparing Blender assets for Three.js.
 
@@ -17,6 +17,8 @@ A local-first Mac workspace for preparing Blender assets for Three.js.
 - Folder batch processing with preset matching, per-file validation, budget flags, cancellation, and JSON reports.
 - Three.js exports now include typed object/animation lookups and an optional React Three Fiber component.
 - Existing Draco/Meshopt, per-texture resize/encoding, KTX2, channel packing, validation fixes, and Blender export watching remain available.
+
+- File watching includes a stat-based fallback for missed filesystem events and atomic replacements.
 
 ### Downloads and updates
 

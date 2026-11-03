@@ -193,6 +193,9 @@ try {
     watcher
       .start(watchFile)
       .then(async () => {
+        // Deliberately suppress native events to exercise the missed-event fallback.
+        watcher.watcher.close();
+        watcher.watcher = null;
         await writeFile(
           path.join(directory, "replacement.glb"),
           await readFile(repeated),

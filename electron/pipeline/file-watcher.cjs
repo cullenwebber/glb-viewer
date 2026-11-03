@@ -9,9 +9,11 @@ class ModelWatcher {
     this.enabled = false;
     this.targets = new Set();
     this.serial = 0;
+    this.pollers = new Map();
   }
   async start(file) {
     this.stop();
+    file = await fsp.realpath(file);
     this.file = file;
     this.targets = new Set([file]);
     this.enabled = true;
@@ -71,6 +73,7 @@ class ModelWatcher {
       }
     }
     this.targets = targets;
+    this.syncPollers();
     const entries = await Promise.all(
       [...this.targets].sort().map(async (file) => [
         file,
@@ -80,6 +83,34 @@ class ModelWatcher {
       ]),
     );
     return JSON.stringify(entries);
+  }
+  syncPollers() {
+    if (!this.enabled) return;
+    for (const [file, listener] of this.pollers)
+      if (!this.targets.has(file)) {
+        fs.unwatchFile(file, listener);
+        this.pollers.delete(file);
+      }
+    const serial = this.serial;
+    for (const file of this.targets) {
+      if (this.pollers.has(file)) continue;
+      const listener = (current, previous) => {
+        if (!this.enabled || serial !== this.serial) return;
+        if (
+          current.mtimeMs === previous.mtimeMs &&
+          current.ctimeMs === previous.ctimeMs &&
+          current.ino === previous.ino &&
+          current.size === previous.size
+        )
+          return;
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => this.settle(serial), 500);
+      };
+      // FSEvents can coalesce or miss atomic replacements on VMs/networked folders.
+      // Stat polling is cheap; hashes are read only after metadata changes.
+      fs.watchFile(file, { interval: 1500, persistent: false }, listener);
+      this.pollers.set(file, listener);
+    }
   }
   async setTargets(files) {
     if (!this.enabled) return;
@@ -92,6 +123,7 @@ class ModelWatcher {
     if (!this.enabled || serial !== this.serial) return;
     try {
       const fingerprint = await this.hashes();
+      if (!this.enabled || serial !== this.serial) return;
       if (fingerprint !== previous) {
         if (attempt >= 10)
           throw new Error(
@@ -121,6 +153,8 @@ class ModelWatcher {
     clearTimeout(this.timer);
     this.watcher?.close();
     this.watcher = null;
+    for (const [file, listener] of this.pollers) fs.unwatchFile(file, listener);
+    this.pollers.clear();
   }
   state() {
     return {

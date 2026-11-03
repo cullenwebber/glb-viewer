@@ -41,55 +41,55 @@ export function WorkbenchWorkspace({
       className="workbench-workspace"
       aria-label="Texture and optimization workspace"
     >
-      <div className="workbench-toolbar">
-        <div className="flex min-w-0 items-center gap-3">
-          <h1>
-            {
-              {
-                textures: "Textures",
-                packing: "Channel packing",
-                report: "Size report",
-                geometry: "Geometry",
-                checks: "Checks",
-                compare: "Compare",
-                history: "History",
-                budgets: "Project budgets",
-                batch: "Batch",
-                presets: "Presets",
-                export: "Export",
-              }[w.tab]
-            }
-          </h1>
-          <span id="wb-source" className="sr-only">
-            {w.source?.name}
-          </span>
+      <h1 className="sr-only">
+        {
+          {
+            textures: "Textures",
+            packing: "Channel packing",
+            report: "Size report",
+            geometry: "Geometry",
+            checks: "Checks",
+            compare: "Compare",
+            history: "History",
+            budgets: "Project budgets",
+            batch: "Batch",
+            presets: "Presets",
+            export: "Export",
+          }[w.tab]
+        }
+      </h1>
+      <span id="wb-source" className="sr-only">
+        {w.source?.name}
+      </span>
+      {["textures", "packing", "geometry"].includes(w.tab) && (
+        <div className="workbench-toolbar">
+          <div className="flex items-center gap-2">
+            <Label
+              htmlFor="wb-geometry"
+              className="mr-1 text-xs text-muted-foreground"
+            >
+              Geometry codec
+            </Label>
+            <NativeSelect
+              id="wb-geometry"
+              value={w.geometry}
+              onChange={(event) => w.changeGeometry(event.target.value)}
+              disabled={busy}
+              className="w-40 text-xs"
+            >
+              <NativeSelectOption value="none">Uncompressed</NativeSelectOption>
+              <NativeSelectOption value="draco">Draco</NativeSelectOption>
+              <NativeSelectOption value="meshopt">Meshopt</NativeSelectOption>
+            </NativeSelect>
+            <GeometryCompression
+              geometry={w.geometry}
+              options={w.geometryOptions}
+              onChange={w.changeGeometryOptions}
+              disabled={busy}
+            />
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Label
-            htmlFor="wb-geometry"
-            className="mr-1 text-xs text-muted-foreground"
-          >
-            Geometry
-          </Label>
-          <NativeSelect
-            id="wb-geometry"
-            value={w.geometry}
-            onChange={(event) => w.changeGeometry(event.target.value)}
-            disabled={busy}
-            className="w-40 text-xs"
-          >
-            <NativeSelectOption value="none">Uncompressed</NativeSelectOption>
-            <NativeSelectOption value="draco">Draco</NativeSelectOption>
-            <NativeSelectOption value="meshopt">Meshopt</NativeSelectOption>
-          </NativeSelect>
-          <GeometryCompression
-            geometry={w.geometry}
-            options={w.geometryOptions}
-            onChange={w.changeGeometryOptions}
-            disabled={busy}
-          />
-        </div>
-      </div>
+      )}
       {w.notice && w.error && (
         <Alert
           id="wb-notice"

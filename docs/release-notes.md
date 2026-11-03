@@ -1,29 +1,14 @@
-## GLB Viewer 1.1.1
+## GLB Viewer 1.2.0
 
-A local-first Mac workspace for preparing Blender assets for Three.js.
+- Organizes the workspace into **Inspect**, **Optimize**, **Review**, and **Tools**.
+- Shows only the related pages beneath the selected section and remembers the last page used in each section.
+- Simplifies the title bar to the source filename, workspace sections, Open model, and an app menu.
+- Moves app updates, keyboard shortcuts, and GitHub releases into the ellipsis menu.
+- Places Blender export watching beside the asset navigation.
+- Removes redundant page-title bars and limits geometry codec controls to output configuration pages.
+- Preserves tight typography, neutral dark surfaces, shadcn keyboard access, and all existing inspection/export tools.
+- Adds Apple Developer enrollment and signing setup instructions.
 
-### Inspection
+Choose the **arm64** DMG for Apple Silicon or **x64** for Intel. Copy GLB Viewer to Applications.
 
-- Linked original/optimized comparison with synchronized cameras and animation.
-- Material solo views: base color, roughness, metalness, ambient occlusion, alpha, and geometry normals.
-- UV checker and pan/zoom UV layout with UV-set selection and raster base-color backgrounds.
-- Face orientation, animated normal overlays, bones/joints, and selectable bone-weight heatmaps.
-- Per-mesh cost heatmaps for triangles, material slots, and texture memory estimates.
-
-### Optimization and delivery
-
-- Persistent named optimization history, snapshot restoration, and run-to-run comparison.
-- Named project budgets for model size, triangles, texture memory, and draw calls.
-- Folder batch processing with preset matching, per-file validation, budget flags, cancellation, and JSON reports.
-- Three.js exports now include typed object/animation lookups and an optional React Three Fiber component.
-- Existing Draco/Meshopt, per-texture resize/encoding, KTX2, channel packing, validation fixes, and Blender export watching remain available.
-
-- File watching includes a stat-based fallback for missed filesystem events and atomic replacements.
-
-### Downloads and updates
-
-Choose **arm64** for Apple Silicon or **x64** for Intel. Open the DMG and copy GLB Viewer to Applications.
-
-These initial release builds are **unsigned** unless the repository's Apple signing credentials have been configured. macOS may block an unsigned download. In-app update checks link to the latest release; signed builds additionally support downloading and installing an update after confirmation. Presets and history are retained when replacing the application.
-
-Rendering measurements describe the current device and view. Memory and batch draw-call values are estimates. Review optimized assets visually before using them in production.
+These builds are unsigned until Apple signing credentials are configured. Update checks open the release page for manual installation; saved presets, budgets, and history are retained. Signed builds support downloading and installing updates from the app.

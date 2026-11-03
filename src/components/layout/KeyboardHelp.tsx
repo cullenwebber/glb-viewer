@@ -18,7 +18,7 @@ export function KeyboardHelp({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Make yourself at home.</DialogTitle>
+          <DialogTitle>Keyboard shortcuts</DialogTitle>
           <DialogDescription>
             Navigate your model and inspect assets.
           </DialogDescription>

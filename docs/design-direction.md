@@ -16,3 +16,17 @@ Layout: a 52 px Mac title bar, 42 px workspace tabs, and a flexible work area. L
 An alternative with a separate optimization modal was reviewed and rejected: it duplicates navigation and hides the asset behind application chrome. A dashboard of metric cards was also rejected: these numbers are properties to scan, not separate destinations. Use ordinary rows, contextual controls, and borders only where panels or sections change function.
 
 Preserve shadcn primitives, accessible controls, keyboard operation, all existing functionality, and the component architecture. Remove placeholder numbering, reassurance copy, repeated metadata, and decorative container cards. Never apply theme colors to imported model materials.
+
+## Navigation refinement
+
+The growing toolset needs hierarchy rather than a longer tab strip. Keep the established Geist typography, -0.02em tracking, sentence case, and monochrome surfaces: black #000000, viewport #0a0a0a, hover #171717, border #2a2a2a, text #ededed, secondary text #a1a1a1. Blue remains reserved for focus and technical overlays.
+
+```
+[traffic lights] [cube / file.glb]  Inspect Optimize Review Tools  [Open model] […]
+                Model  Textures  Checks  Performance             [Watch]
+                workspace
+```
+
+Four primary sections establish where a tool belongs. The second row contains at most four related views, with the current page underlined. Remember the most recent page in each section. The source filename stays stable while previewing optimized output. Move update and help actions into the app menu; keep file watching beside the asset navigation. Remove the global Optimize button and repeated page-title bars. Show geometry codec controls only where output is configured. Review pages get the recovered vertical space for their actual content.
+
+The design keeps the visual emphasis on the asset, with no new cards, decorative labels, or accent branding. At the minimum Mac window width, filename truncation protects both navigation and the Open action; all pages remain keyboard accessible through shadcn tabs.

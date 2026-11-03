@@ -21,6 +21,14 @@ npm run desktop
 
 For development with hot reload, run `npm run desktop:dev`. `npm run dev` starts the browser version at http://127.0.0.1:5173.
 
+## Navigation
+
+- **Inspect:** model, textures, checks, and performance.
+- **Optimize:** geometry, channel packing, and presets.
+- **Review:** comparison, size report, history, and export.
+- **Tools:** batch processing and project budgets.
+- Each section remembers its last page. Use the ellipsis app menu for updates and keyboard shortcuts. File watching sits beside the contextual tabs.
+
 ## Use
 
 - Open a `.glb` or `.gltf` using **Open model**, **⌘O**, drag and drop, or Finder’s **Open With → GLB Viewer** after installing the app.

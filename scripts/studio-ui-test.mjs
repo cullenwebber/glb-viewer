@@ -1,3 +1,4 @@
+import { openWorkspace, openUpdates } from "./ui-navigation.mjs";
 import { _electron as electron } from "@playwright/test";
 import assert from "node:assert/strict";
 import {
@@ -129,10 +130,10 @@ try {
   await page.screenshot({ path: path.join(tmpdir(), "glb-studio-uv.png") });
   await page.keyboard.press("Escape");
   await page.locator("#surface-mode").selectOption("material");
-  await page.locator('[data-tab="textures"]').click();
+  await openWorkspace(page, "textures");
   await page.locator("#wb-count").filter({ hasText: "4" }).waitFor();
   await page.locator("#wb-geometry").selectOption("meshopt");
-  await page.locator('[data-tab="presets"]').click();
+  await openWorkspace(page, "presets");
   await page.locator("#save-current-preset").click();
   await page.locator("#preset-name").fill("Batch web");
   await page.getByRole("button", { name: "Save preset", exact: true }).click();
@@ -146,7 +147,7 @@ try {
       console.log(await page.locator("#workbench").textContent());
       throw error;
     });
-  await page.locator('[data-tab="compare"]').click();
+  await openWorkspace(page, "compare");
   await page.locator(".comparison-views canvas").nth(1).waitFor();
   await page.getByLabel("Comparison animation").selectOption("0");
   await page.getByLabel("Comparison timeline").fill("0.6");
@@ -166,7 +167,7 @@ try {
   await page.screenshot({
     path: path.join(tmpdir(), "glb-studio-compare.png"),
   });
-  await page.locator('[data-tab="history"]').click();
+  await openWorkspace(page, "history");
   await page.locator("[data-history]").waitFor();
   const name = page.locator("[data-history] input").first();
   await name.fill("Web final");
@@ -176,7 +177,7 @@ try {
     .locator("#wb-notice")
     .filter({ hasText: "Run restored" })
     .waitFor();
-  await page.locator('[data-tab="budgets"]').click();
+  await openWorkspace(page, "budgets");
   await page.locator("#budget-name").fill("Mobile test");
   await page.locator("#budget-triangles").fill("1");
   await page.locator("#save-budget").click();
@@ -192,7 +193,7 @@ try {
       })),
     input,
   );
-  await page.locator('[data-tab="batch"]').click();
+  await openWorkspace(page, "batch");
   await page.locator("#batch-choose").click();
   await page.locator('[data-batch-row="0"]').waitFor();
   await page.getByLabel("Batch budget").selectOption({ label: "Mobile test" });
@@ -217,7 +218,7 @@ try {
     await readFile(path.join(directory, output, "batch-report.json"), "utf8"),
   );
   assert(batch.rows[0].budgets.some((row) => row.exceeded));
-  await page.locator('[data-tab="history"]').click();
+  await openWorkspace(page, "history");
   assert.match(
     await page.locator("[data-history] input").first().inputValue(),
     /Web final/,
@@ -227,7 +228,7 @@ try {
     .locator("#wb-notice")
     .filter({ hasText: "Optimization complete" })
     .waitFor({ timeout: 60000 });
-  await page.locator('[data-tab="history"]').click();
+  await openWorkspace(page, "history");
   await page.waitForFunction(
     () => document.querySelectorAll("[data-history]").length === 2,
   );
@@ -252,7 +253,7 @@ try {
       })),
     input,
   );
-  await page.locator('[data-tab="batch"]').click();
+  await openWorkspace(page, "batch");
   await page.locator("#batch-choose").click();
   await app.evaluate(
     ({ dialog }, folder) =>
@@ -263,8 +264,8 @@ try {
     directory,
   );
   await page.locator("#batch-run").click();
-  await page.locator('[data-tab="history"]').click();
-  await page.locator('[data-tab="batch"]').click();
+  await openWorkspace(page, "history");
+  await openWorkspace(page, "batch");
   await page.getByRole("button", { name: "Cancel batch", exact: true }).click();
   await page
     .locator('[data-batch-row="12"]')
@@ -282,7 +283,7 @@ try {
     ),
   );
   assert(cancelled.some((report) => report.cancelled));
-  await page.locator("#app-updates").click();
+  await openUpdates(page);
   await page.locator("#update-status").waitFor();
   assert.match(
     await page.getByRole("dialog").textContent(),

@@ -1,3 +1,4 @@
+import { openWorkspace } from "./ui-navigation.mjs";
 import { _electron as electron } from "@playwright/test";
 import assert from "node:assert/strict";
 import { mkdtemp, writeFile, readFile, rm } from "node:fs/promises";
@@ -33,7 +34,7 @@ try {
     file,
   );
   await page.locator("#filename").filter({ hasText: "fixture.glb" }).waitFor();
-  await page.locator("#texture-workbench").click();
+  await openWorkspace(page, "textures");
   await page
     .locator("#wb-count")
     .filter({ hasText: "4" })
@@ -89,7 +90,7 @@ try {
   await page.locator("#geometry-settings").click();
   await page.locator("#meshopt-level").selectOption("high");
   await page.getByRole("button", { name: "Done", exact: true }).click();
-  await page.locator('[data-tab="packing"]').click();
+  await openWorkspace(page, "packing");
   await page.locator("#wb-add-pack").click();
   await page.locator('[data-field="size"]').selectOption("256");
   await page.locator("#wb-run").click();
@@ -105,7 +106,7 @@ try {
   await page.screenshot({
     path: path.join(tmpdir(), "glb-workbench-report.png"),
   });
-  await page.locator('[data-tab="textures"]').click();
+  await openWorkspace(page, "textures");
   await page.locator('[data-texture="0"]').click();
   await page.locator("#wb-version").selectOption("output");
   try {
@@ -152,7 +153,7 @@ try {
     .locator("#filename")
     .filter({ hasText: "fixture-optimized.glb" })
     .waitFor();
-  await page.locator("#texture-workbench").click();
+  await openWorkspace(page, "textures");
   await page.locator("#wb-original").click();
   await page.locator("#filename").filter({ hasText: "fixture.glb" }).waitFor();
   const input = path.join(directory, "custom-roughness.png");
@@ -177,10 +178,10 @@ try {
       })),
     input,
   );
-  await page.locator("#texture-workbench").click();
+  await openWorkspace(page, "textures");
   await page.locator("#wb-import").click();
   await page.locator("#wb-count").filter({ hasText: "5" }).waitFor();
-  await page.locator('[data-tab="packing"]').click();
+  await openWorkspace(page, "packing");
   await page.locator('[data-source="1"]').selectOption("4");
   await page.locator('[data-input-channel="1"]').selectOption("0");
   await page.locator("#wb-geometry").selectOption("draco");

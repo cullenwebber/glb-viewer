@@ -9,7 +9,14 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import type { UpdateState } from "@/model-types";
-export function UpdateControl() {
+export function UpdateControl({
+  renderTrigger,
+}: {
+  renderTrigger?: (
+    open: () => void,
+    state: UpdateState | undefined,
+  ) => React.ReactNode;
+}) {
   const [state, setState] = useState<UpdateState>(),
     [open, setOpen] = useState(false);
   useEffect(() => {
@@ -25,19 +32,23 @@ export function UpdateControl() {
       show();
     };
   }, []);
-  if (!window.desktop) return null;
+  if (!window.desktop && !renderTrigger) return null;
   const act = (action: () => Promise<unknown>) =>
     void action().catch((e) => toast.error(String(e.message || e)));
   return (
     <>
-      <Button
-        id="app-updates"
-        variant="ghost"
-        size="sm"
-        onClick={() => setOpen(true)}
-      >
-        Updates{state?.status === "available" ? " · available" : ""}
-      </Button>
+      {renderTrigger ? (
+        renderTrigger(() => setOpen(true), state)
+      ) : (
+        <Button
+          id="app-updates"
+          variant="ghost"
+          size="sm"
+          onClick={() => setOpen(true)}
+        >
+          Updates{state?.status === "available" ? " · available" : ""}
+        </Button>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>

@@ -1,3 +1,4 @@
+import { openWorkspace } from "./ui-navigation.mjs";
 import { _electron as electron } from "@playwright/test";
 import assert from "node:assert/strict";
 import {
@@ -47,7 +48,7 @@ try {
     file,
   );
   await page.locator("#filename").filter({ hasText: "fixture.glb" }).waitFor();
-  await page.locator('[data-tab="checks"]').click();
+  await openWorkspace(page, "checks");
   await page.locator("#checks-summary").waitFor();
   assert.match(await page.locator("#checks-summary").textContent(), /Errors0/);
   await page.locator("#checks-fix-all").click();
@@ -55,7 +56,7 @@ try {
     .getByRole("button", { name: "Undo fix", exact: true })
     .first()
     .waitFor();
-  await page.locator('[data-tab="performance"]').click();
+  await openWorkspace(page, "performance");
   await page.locator("#perf-frame-ms").waitFor();
   await page.locator("#perf-transmission").click();
   await page.locator("#perf-pixel-ratio").selectOption("1");
@@ -63,7 +64,7 @@ try {
     .getByRole("button", { name: "Isolate Sphere", exact: true })
     .click();
   await page.getByRole("button", { name: "Show all", exact: true }).click();
-  await page.locator('[data-tab="textures"]').click();
+  await openWorkspace(page, "textures");
   await page.locator("#wb-count").filter({ hasText: "4" }).waitFor();
   await page.locator('[data-texture="0"]').click();
   await page.locator("#wb-format").selectOption("webp");
@@ -71,7 +72,7 @@ try {
     .getByRole("spinbutton", { name: "Image quality", exact: true })
     .fill("82");
   await page.locator("#wb-geometry").selectOption("meshopt");
-  await page.locator('[data-tab="geometry"]').click();
+  await openWorkspace(page, "geometry");
   await page
     .getByRole("spinbutton", { name: "Keep triangles (%)", exact: true })
     .fill("50");
@@ -81,7 +82,7 @@ try {
   await page.locator("#lod-levels").selectOption("0.5,0.25");
   await page.locator("#opt-dedup").click();
   await page.locator("#opt-resample").click();
-  await page.locator('[data-tab="presets"]').click();
+  await openWorkspace(page, "presets");
   await page.locator("#save-current-preset").click();
   await page.locator("#preset-name").fill("Blender web preset");
   await page.getByRole("button", { name: "Save preset", exact: true }).click();
@@ -94,7 +95,7 @@ try {
     .locator("#wb-notice")
     .filter({ hasText: "Optimization complete" })
     .waitFor({ timeout: 60000 });
-  await page.locator('[data-tab="checks"]').click();
+  await openWorkspace(page, "checks");
   await page.getByLabel("Validation target").selectOption("optimized");
   await page.locator("#checks-summary").waitFor();
   await page
@@ -111,7 +112,7 @@ try {
       })),
     directory,
   );
-  await page.locator('[data-tab="export"]').click();
+  await openWorkspace(page, "export");
   await page.locator("#export-bundle").click();
   await page
     .locator("#wb-notice")
@@ -137,7 +138,7 @@ try {
       .getCount() <
       doc.getRoot().listMeshes()[0].listPrimitives()[0].getIndices().getCount(),
   );
-  await page.locator('[data-tab="textures"]').click();
+  await openWorkspace(page, "textures");
   await page.locator("#watch-model").click();
   await page.waitForFunction(
     () =>
@@ -161,7 +162,7 @@ try {
       .inputValue(),
     "82",
   );
-  await page.locator('[data-tab="geometry"]').click();
+  await openWorkspace(page, "geometry");
   assert.equal(await page.locator("#lod-levels").inputValue(), "0.5,0.25");
   await page.locator("#watch-model").click();
   await page.screenshot({
@@ -176,7 +177,7 @@ try {
     file,
   );
   await page.locator("#filename").filter({ hasText: "fixture.glb" }).waitFor();
-  await page.locator('[data-tab="presets"]').click();
+  await openWorkspace(page, "presets");
   await page
     .locator("[data-preset]")
     .filter({ hasText: "Blender web preset" })
@@ -186,7 +187,7 @@ try {
     .locator("#wb-notice")
     .filter({ hasText: "Preset applied" })
     .waitFor();
-  await page.locator('[data-tab="textures"]').click();
+  await openWorkspace(page, "textures");
   await page.locator('[data-texture="0"]').click();
   assert.equal(await page.locator("#wb-format").inputValue(), "webp");
   assert.deepEqual(errors, []);

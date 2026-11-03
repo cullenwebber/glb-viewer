@@ -27,7 +27,7 @@ html {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 16px;
   padding: 0 20px 0 94px;
   border-bottom: 1px solid var(--border);
   background: var(--background);
@@ -39,8 +39,10 @@ html {
 .app-identity {
   display: flex;
   align-items: center;
-  gap: 11px;
-  min-width: 0;
+  gap: 9px;
+  flex: 1 1 220px;
+  max-width: 320px;
+  min-width: 84px;
   font-size: 13px;
   font-weight: 500;
 }
@@ -54,7 +56,7 @@ html {
   margin: 0 4px;
 }
 .header-filename {
-  max-width: 400px;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -345,6 +347,7 @@ html {
   padding: 0 15px;
 }
 .model-inspector {
+  min-width: 0;
   background: var(--background);
   border-left: 1px solid var(--border);
   display: flex;
@@ -357,6 +360,7 @@ html {
   border-top: 1px solid var(--border);
 }
 .asset-heading {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -446,11 +450,11 @@ html {
   min-height: 0;
 }
 .workbench-toolbar {
-  height: 52px;
-  min-height: 52px;
+  height: 42px;
+  min-height: 42px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 16px;
   padding: 0 20px;
   border-bottom: 1px solid var(--border);
@@ -1062,4 +1066,83 @@ html {
   font-size: 12px;
   color: var(--muted-foreground);
   pointer-events: none;
+}
+
+.workspace-sections {
+  flex: 0 0 auto;
+  margin-right: auto;
+  -webkit-app-region: no-drag;
+}
+.workspace-sections [data-slot="tabs-list"] {
+  gap: 4px;
+  padding: 0;
+  height: 30px;
+}
+.workspace-sections [data-slot="tabs-trigger"] {
+  padding: 5px 10px;
+  border: 0;
+  font-size: 12px;
+  border-radius: 5px;
+  height: 30px;
+  background: transparent;
+  color: var(--muted-foreground);
+  box-shadow: none;
+}
+.workspace-sections [data-slot="tabs-trigger"][data-state="active"] {
+  color: var(--foreground);
+  background: var(--muted);
+}
+.workspace-sections [data-slot="tabs-trigger"]::after {
+  display: none;
+}
+.workspace-tools {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.workspace-tools #watch-model {
+  height: 26px;
+  padding: 0 8px;
+  font-size: 11px;
+}
+.workspace-tools #watch-model svg {
+  width: 13px;
+  height: 13px;
+}
+@media (max-width: 1000px) {
+  .app-titlebar {
+    gap: 12px;
+    padding-right: 16px;
+  }
+  .app-identity {
+    max-width: 220px;
+  }
+  .workspace-sections [data-slot="tabs-trigger"] {
+    padding-inline: 8px;
+  }
+}
+@media (max-width: 700px) {
+  .app-identity {
+    max-width: 130px;
+    min-width: 50px;
+  }
+  .header-actions #open-model {
+    font-size: 0;
+    gap: 0;
+    width: 30px;
+    padding: 0;
+  }
+  .header-actions #open-model svg {
+    width: 15px;
+  }
+  .workspace-sections [data-slot="tabs-trigger"] {
+    font-size: 11px;
+    padding-inline: 6px;
+  }
+}
+
+/* Radix's measuring table must not expand inspector rows to a long filename's intrinsic width. */
+.model-inspector [data-slot="scroll-area-viewport"] > div,
+.performance-panel [data-slot="scroll-area-viewport"] > div {
+  display: block !important;
 }

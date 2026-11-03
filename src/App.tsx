@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { UpdateControl } from "@/components/updates/UpdateControl";
 import { PerformancePanel } from "@/components/performance/PerformancePanel";
-import { WatchControl } from "@/components/layout/WatchControl";
 import { WorkspaceNavigation } from "@/components/layout/WorkspaceNavigation";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { SceneSidebar } from "@/components/layout/SceneSidebar";
@@ -14,6 +12,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { Input } from "@/components/ui/input";
 import { useModelViewer } from "@/hooks/use-model-viewer";
+import { useWorkspaceNavigation } from "@/hooks/use-workspace-navigation";
 import { useWorkbench } from "@/hooks/use-workbench";
 import { loadFiles, readEntry } from "@/viewer/files";
 import type { ModelFile } from "@/model-types";
@@ -21,7 +20,8 @@ import { errorMessage } from "@/lib/format";
 export function App() {
   const sourceHandler = useRef<(file: ModelFile) => void>(() => {}),
     viewer = useModelViewer((file) => sourceHandler.current(file)),
-    workbench = useWorkbench(viewer.load);
+    workbench = useWorkbench(viewer.load),
+    navigation = useWorkspaceNavigation(workbench);
   sourceHandler.current = workbench.sourceLoaded;
   const filesRef = useRef<HTMLInputElement>(null),
     dragDepth = useRef(0),
@@ -119,21 +119,13 @@ export function App() {
   return (
     <TooltipProvider>
       <AppHeader
-        name={viewer.state.name}
-        demo={viewer.state.demo}
-        watch={
-          <>
-            <UpdateControl />
-            <WatchControl workbench={workbench} />
-          </>
-        }
+        name={workbench.source?.name || viewer.state.name}
+        demo={!workbench.source && viewer.state.demo}
         onOpen={open}
-        onOptimize={() => {
-          workbench.setTab("report");
-          workbench.setOpen(true);
-        }}
+        onHelp={() => setHelp(true)}
+        navigation={navigation}
       />
-      <WorkspaceNavigation workbench={workbench} />
+      <WorkspaceNavigation workbench={workbench} navigation={navigation} />
       <div
         className={`app-workspace ${workbench.tab === "performance" ? "performance-mode" : ""}`}
         style={workbench.open ? { display: "none" } : undefined}

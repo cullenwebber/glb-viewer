@@ -7,14 +7,23 @@ GitHub Actions builds Mac installers from this repository. `Checks` runs on push
 1. Update `package.json` and `package-lock.json` with the same semantic version.
 2. Update `docs/release-notes.md`.
 3. Run `npm test`, commit, and push.
-4. Tag that commit (`git tag v1.1.1`) and push the tag (`git push origin v1.1.1`). The workflow verifies that the tag matches the package version, tests the app, and builds DMG and ZIP downloads for Apple Silicon and Intel.
+4. Tag that commit (`git tag v1.2.0`) and push the tag (`git push origin v1.2.0`). The workflow verifies that the tag matches the package version, tests the app, and builds DMG and ZIP downloads for Apple Silicon and Intel.
 5. Open the workflow run and release page to verify the downloads.
 
 Installers use `GLB-Viewer-<version>-<arch>.dmg` and `.zip`. Release metadata and blockmaps accompany them for electron-updater. Never replace release files with different binaries under the same version. Publish a new version for a fix.
 
 ## Apple signing and notarization
 
-Unsigned builds use manual updates. For signed distribution, configure these **GitHub Actions repository secrets**:
+Unsigned builds use manual updates. If you are not enrolled yet:
+
+1. [Enroll in the Apple Developer Program](https://developer.apple.com/programs/enroll/) using your own Apple Account. Apple lists an annual fee of US$99 or local pricing and verifies your identity during enrollment.
+2. After approval, follow [Apple's Developer ID certificate instructions](https://developer.apple.com/help/account/certificates/create-developer-id-certificates/) to create a **Developer ID Application** certificate. This is the certificate for signing an app distributed outside the Mac App Store.
+3. Keep the certificate's private key on your Mac. Export the signing identity as a password-protected `.p12` using [Xcode's certificate export flow](https://help.apple.com/xcode/mac/current/en.lproj/dev154b28f09.html). Exporting only the `.cer` file is insufficient for CI signing.
+4. Create an [app-specific password](https://support.apple.com/102654) for notarization and find your Team ID in your Apple Developer membership details.
+5. Add the values below directly to **GitHub → repository Settings → Secrets and variables → Actions**. Keep private keys, certificate passwords, and app-specific passwords out of source files and chat.
+6. Publish a new signed release, verify notarization on a clean Mac, and use it as the installed starting point for signed automatic updates.
+
+For signed distribution, configure these **GitHub Actions repository secrets**:
 
 | Secret                        | Purpose                                                      |
 | ----------------------------- | ------------------------------------------------------------ |

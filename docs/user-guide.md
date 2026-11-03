@@ -27,7 +27,8 @@ For development with hot reload, run `npm run desktop:dev`. `npm run dev` starts
 - **Optimize:** geometry, channel packing, and presets.
 - **Review:** comparison, size report, history, and export.
 - **Tools:** batch processing and project budgets.
-- Each section remembers its last page. Use the ellipsis app menu for updates and keyboard shortcuts. File watching sits beside the contextual tabs.
+- Drag the dividers beside the scene tree, inspector, texture library, or texture properties to change their widths. Widths are remembered between app sessions. Focus a divider and use arrow keys for keyboard resizing; double-click either divider to reset that workspace.
+- All tools stay listed in the left navigation. Its optional compact mode is remembered between sessions. Use the ellipsis app menu for updates and keyboard shortcuts; file watching is in the navigation footer.
 
 ## Use
 

@@ -1,3 +1,4 @@
+import { ResizableWorkspace } from "@/components/layout/ResizableWorkspace";
 import { ImageIcon } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TextureDebugger } from "./TextureDebugger";
@@ -16,48 +17,61 @@ export function TextureInspector({
     );
   return (
     <div className="texture-inspector-layout">
-      <TextureList
-        textures={w.analysis?.textures ?? []}
-        selected={w.selected}
-        onSelect={w.setSelected}
-        onImport={w.importTextures}
-      />
-      <div className="texture-preview-panel">
-        {row && setting ? (
-          <>
-            <div className="texture-preview-heading">
-              <h2>{row.name}</h2>
-              <span>
-                {row.width} × {row.height}
-              </span>
-            </div>
-            <TextureDebugger
-              key={row.id}
-              token={w.token}
-              texture={row}
-              outputId={comparison?.outputId}
-              notify={w.notify}
-            />
-          </>
-        ) : (
-          <div className="workspace-empty">
-            <ImageIcon className="size-6" />
-            <p>Select an image to inspect it.</p>
-          </div>
-        )}
-      </div>
-      <ScrollArea className="texture-settings-panel">
-        <div className="panel-heading">
-          <h2>Properties</h2>
-        </div>
-        {row && setting && (
-          <TextureOutputSettings
-            texture={row}
-            setting={setting}
-            onChange={(update) => w.changeTexture(row.id, update)}
+      <ResizableWorkspace
+        id="texture-panels"
+        leftLabel="texture library"
+        rightLabel="texture properties"
+        leftSize={256}
+        rightSize={280}
+        left={
+          <TextureList
+            textures={w.analysis?.textures ?? []}
+            selected={w.selected}
+            onSelect={w.setSelected}
+            onImport={w.importTextures}
           />
-        )}
-      </ScrollArea>
+        }
+        center={
+          <div className="texture-preview-panel">
+            {row && setting ? (
+              <>
+                <div className="texture-preview-heading">
+                  <h2>{row.name}</h2>
+                  <span>
+                    {row.width} × {row.height}
+                  </span>
+                </div>
+                <TextureDebugger
+                  key={row.id}
+                  token={w.token}
+                  texture={row}
+                  outputId={comparison?.outputId}
+                  notify={w.notify}
+                />
+              </>
+            ) : (
+              <div className="workspace-empty">
+                <ImageIcon className="size-6" />
+                <p>Select an image to inspect it.</p>
+              </div>
+            )}
+          </div>
+        }
+        right={
+          <ScrollArea className="texture-settings-panel">
+            <div className="panel-heading">
+              <h2>Properties</h2>
+            </div>
+            {row && setting && (
+              <TextureOutputSettings
+                texture={row}
+                setting={setting}
+                onChange={(update) => w.changeTexture(row.id, update)}
+              />
+            )}
+          </ScrollArea>
+        }
+      />
     </div>
   );
 }

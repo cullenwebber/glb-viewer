@@ -9,7 +9,15 @@ import {
 import { toast } from "sonner";
 import type { WorkbenchState } from "@/hooks/use-workbench";
 import { errorMessage } from "@/lib/format";
-export function WatchControl({ workbench: w }: { workbench: WorkbenchState }) {
+export function WatchControl({
+  workbench: w,
+  compact = false,
+  fullLabel = false,
+}: {
+  workbench: WorkbenchState;
+  compact?: boolean;
+  fullLabel?: boolean;
+}) {
   const [watching, setWatching] = useState(false),
     [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -59,7 +67,15 @@ export function WatchControl({ workbench: w }: { workbench: WorkbenchState }) {
           onClick={toggle}
         >
           <RefreshCw className={watching ? "text-blue-400" : ""} />
-          {watching ? "Watching" : "Watch"}
+          <span className={compact ? "sr-only" : undefined}>
+            {fullLabel
+              ? watching
+                ? "Watching exports"
+                : "Watch exports"
+              : watching
+                ? "Watching"
+                : "Watch"}
+          </span>
         </Button>
       </TooltipTrigger>
       <TooltipContent>

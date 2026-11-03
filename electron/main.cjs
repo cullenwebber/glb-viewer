@@ -7,6 +7,7 @@ const {
   net,
   Menu,
   shell,
+  nativeImage,
 } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs/promises");
@@ -15,6 +16,11 @@ const { randomUUID, createHash } = require("node:crypto");
 const { createLibrary } = require("./pipeline/library.cjs");
 const { ModelWatcher } = require("./pipeline/file-watcher.cjs");
 const { exportBundle } = require("./pipeline/export-bundle.cjs");
+// Preserve existing preferences when applying the user-facing app name.
+const existingUserData = app.getPath("userData");
+app.setName("GLB Viewer");
+app.setPath("userData", existingUserData);
+process.title = "GLB Viewer";
 if (process.env.GLB_VIEWER_USER_DATA) {
   require("node:fs").mkdirSync(process.env.GLB_VIEWER_USER_DATA, {
     recursive: true,
@@ -129,6 +135,17 @@ app.on("open-file", (event, file) => {
   else pending = file;
 });
 app.whenReady().then(() => {
+  const iconPath = path.join(__dirname, "../assets/icon.png");
+  const icon = nativeImage.createFromPath(iconPath);
+  if (process.platform === "darwin" && !icon.isEmpty()) app.dock?.setIcon(icon);
+  app.setAboutPanelOptions({
+    applicationName: "GLB Viewer",
+    applicationVersion: app.getVersion(),
+    version: "",
+    copyright: "© " + new Date().getFullYear() + " Cullen Webber",
+    credits: "A local workspace for glTF and Three.js.",
+    iconPath,
+  });
   const { autoUpdater } = require("electron-updater");
   updates = require("./pipeline/updates.cjs").createUpdates({
     app,
@@ -536,7 +553,7 @@ app.whenReady().then(() => {
   else window.loadURL("viewer://app/index.html");
   ipcMain.on("renderer-ready", () => {
     rendererReady = true;
-    if (app.isPackaged) {
+    if (app.isPackaged && !process.argv.includes("--dev")) {
       const timer = setTimeout(() => void updates.check(), 15000);
       timer.unref();
     }

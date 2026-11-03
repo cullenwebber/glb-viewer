@@ -19,14 +19,24 @@ Preserve shadcn primitives, accessible controls, keyboard operation, all existin
 
 ## Navigation refinement
 
-The growing toolset needs hierarchy rather than a longer tab strip. Keep the established Geist typography, -0.02em tracking, sentence case, and monochrome surfaces: black #000000, viewport #0a0a0a, hover #171717, border #2a2a2a, text #ededed, secondary text #a1a1a1. Blue remains reserved for focus and technical overlays.
+Keep global navigation separate from model contents. A persistent 176px left sidebar lists all thirteen tools in four named groups: Inspect, Optimize, Review, and Tools. Labels remain visible by default. The active page gets a filled background and a left edge marker. An optional 48px icon rail preserves tooltips and keyboard access; the user's choice persists.
 
 ```
-[traffic lights] [cube / file.glb]  Inspect Optimize Review Tools  [Open model] […]
-                Model  Textures  Checks  Performance             [Watch]
-                workspace
+[traffic lights] [cube / file.glb]                             [Open model] […]
+[Inspect   ] [scene tree] | [viewport] | [properties]
+[ Model    ]             draggable panel dividers
+[ Textures ]
+[ ...      ]
+[Optimize  ]
+[ ...      ]
+[Review    ]
+[ ...      ]
+[Tools     ]
+[ ...      ]
+[Watch     ]
+[Collapse  ]
 ```
 
-Four primary sections establish where a tool belongs. The second row contains at most four related views, with the current page underlined. Remember the most recent page in each section. The source filename stays stable while previewing optimized output. Move update and help actions into the app menu; keep file watching beside the asset navigation. Remove the global Optimize button and repeated page-title bars. Show geometry codec controls only where output is configured. Review pages get the recovered vertical space for their actual content.
+The sidebar uses the established Geist typography, -0.02em tracking, sentence case, and restrained neutral surfaces. Group headings are structural navigation labels. No tools are hidden inside category tabs. The scene tree, inspector, texture library, and texture properties retain independent persistent draggable widths. Double-clicking a divider resets that workspace. The top bar contains only the source file, Open model, and the app menu.
 
-The design keeps the visual emphasis on the asset, with no new cards, decorative labels, or accent branding. At the minimum Mac window width, filename truncation protects both navigation and the Open action; all pages remain keyboard accessible through shadcn tabs.
+Reference patterns: [Vercel's 2026 sidebar redesign](https://vercel.com/changelog/dashboard-navigation-redesign-rollout), [VS Code's separation of activity navigation and content panels](https://code.visualstudio.com/docs/editing/getting-started/userinterface), and [Figma's navigation and property panels](https://help.figma.com/hc/en-us/articles/360039832014-Design-prototype-and-explore-layer-properties-in-the-right-sidebar).

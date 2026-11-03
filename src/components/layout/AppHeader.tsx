@@ -1,20 +1,16 @@
 import { Box, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AppMenu } from "./AppMenu";
-import { WorkspaceSections } from "./WorkspaceSections";
-import type { WorkspaceNavigator } from "@/hooks/use-workspace-navigation";
 export function AppHeader({
   name,
   demo,
   onOpen,
   onHelp,
-  navigation,
 }: {
   name: string;
   demo: boolean;
   onOpen: () => void;
   onHelp: () => void;
-  navigation: WorkspaceNavigator;
 }) {
   return (
     <header className="app-titlebar">
@@ -31,7 +27,6 @@ export function AppHeader({
           {demo ? "Untitled" : name}
         </span>
       </div>
-      <WorkspaceSections navigation={navigation} />
       <div className="header-actions">
         <Button id="open-model" variant="outline" size="sm" onClick={onOpen}>
           <FolderOpen />

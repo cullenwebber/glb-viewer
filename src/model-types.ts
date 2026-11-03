@@ -112,7 +112,74 @@ export type Report = {
   afterMeshes?: MeshInfo[];
   lods?: { name: string; ratio: number; size: number; meshes: MeshInfo[] }[];
 };
+export type HistoryRun = {
+  id: string;
+  sourceKey: string;
+  name: string;
+  createdAt: string;
+  recipe: Recipe;
+  report: Report;
+};
+export type ProjectBudget = {
+  id: string;
+  name: string;
+  fileBytes: number;
+  textureBytes: number;
+  triangles: number;
+  drawCalls: number;
+};
+export type BatchRow = {
+  index: number;
+  name: string;
+  status: string;
+  message?: string;
+  beforeBytes?: number;
+  afterBytes?: number;
+  warnings?: string[];
+  budgets?: {
+    key: string;
+    limit: number;
+    actual: number | null;
+    exceeded: boolean;
+  }[];
+};
+export type UpdateState = {
+  version: string;
+  status: string;
+  automatic: boolean;
+  availableVersion: string | null;
+  progress: number;
+  error: string | null;
+  url: string;
+};
 export interface DesktopApi {
+  updateState(): Promise<UpdateState>;
+  checkUpdates(): Promise<UpdateState>;
+  downloadUpdate(): Promise<UpdateState>;
+  installUpdate(): Promise<void>;
+  openReleases(): Promise<void>;
+  onUpdate(callback: (state: UpdateState) => void): () => void;
+  onShowUpdates(callback: () => void): () => void;
+  listHistory(key: string): Promise<HistoryRun[]>;
+  saveHistory(token: string, recipe: Recipe): Promise<HistoryRun>;
+  renameHistory(id: string, name: string): Promise<HistoryRun>;
+  deleteHistory(id: string): Promise<void>;
+  historyBytes(id: string): Promise<Uint8Array>;
+  restoreHistory(
+    token: string,
+    id: string,
+  ): Promise<{ report: Report; recipe: Recipe }>;
+  listBudgets(): Promise<ProjectBudget[]>;
+  saveBudget(value: Partial<ProjectBudget>): Promise<ProjectBudget>;
+  deleteBudget(id: string): Promise<void>;
+  chooseBatch(): Promise<{ id: string; names: string[] } | null>;
+  runBatch(
+    id: string,
+    preset: string,
+    budget: string,
+  ): Promise<{ rows?: BatchRow[]; output: string; cancelled?: boolean } | null>;
+  cancelBatch(): Promise<void>;
+  onBatchProgress(callback: (row: BatchRow) => void): () => void;
   checkModel(token: string, output?: boolean): Promise<CheckReport>;
   watchModel(token: string, enabled: boolean): Promise<WatchState>;
   watchState(): Promise<WatchState>;

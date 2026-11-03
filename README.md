@@ -2,7 +2,13 @@
 
 # GLB Viewer
 
-A macOS desktop viewer for checking GLB and glTF assets before using them in Three.js. Built with Electron, React, TypeScript, Three.js, and [shadcn/ui](https://ui.shadcn.com/). Models and their resources stay local; decoders and the studio environment are bundled for offline use.
+A macOS desktop workspace for inspecting, debugging, comparing, and optimizing GLB and glTF assets before using them in Three.js. Built with Electron, React, TypeScript, Three.js, and [shadcn/ui](https://ui.shadcn.com/). Models and their resources stay local; decoders and the studio environment are bundled for offline use.
+
+[Download the latest release](https://github.com/cullenwebber/glb-viewer/releases/latest) · [Build status](https://github.com/cullenwebber/glb-viewer/actions)
+
+## Install
+
+Choose the **arm64** DMG for Apple Silicon or **x64** for Intel, open it, and copy GLB Viewer to Applications. Initial unsigned builds use manual updates; Developer ID-signed builds can install updates from inside the app. **Updates** checks GitHub for a newer release. Presets, budgets, and optimization history survive app replacement.
 
 ## Run
 
@@ -54,6 +60,34 @@ Optimization runs in a background worker in the Mac app, and can be cancelled. A
 - Enable **Watch** after opening a model to reload stable Blender re-exports, including atomic file replacements and changes to referenced resources. The camera and optimization recipe are retained. Export into the same location to keep the loop running.
 - **Presets** saves named recipes locally, with rename, delete, and JSON import/export. Recipes include compression, geometry, texture rules, and channel packing. Matching uses texture identities, material names, and unambiguous texture roles rather than numeric indices. Missing or ambiguous matches are reported. Presets store rules rather than image binaries; reimport external packing inputs when unavailable. Each source also restores its last recipe automatically.
 - **Export** saves either a self-contained optimized GLB or a complete Three.js bundle containing the model, generated LODs, offline decoders, a TypeScript loader with animation/disposal helpers, asset metadata, and the optimization report. Its README explains where to copy the assets and how to configure URLs. Export requires a successful optimization with current settings.
+
+## Inspection and comparison
+
+Use **Surface inspection** in the model inspector to solo base color, roughness, metalness, AO, alpha, the normal map, or geometry normal directions. **Face orientation** shows front faces blue and back faces red. **UV checker** uses the selected UV set; **Inspect UV layout** opens a pan/zoom layout with a checker or the first material's raster base-color texture. UV edges show exported triangles, with dense layouts sampled to 50,000 triangles. Missing UV sets are identified.
+
+Choose **Bone weights**, then select a bone from the dropdown, scene tree, or visible joint in the viewport. Blue means zero weight and red means full influence. Bone overlays follow animation. The **Cost heatmap** compares meshes by triangle count, material slots, or estimated texture memory. Shared texture memory is counted for each mesh that references it; heatmap colors are relative to the current asset.
+
+**Compare** loads original and optimized assets side by side with linked orbit, zoom, pan, and animation time. Use the split control to resize the views, or scrub their shared timeline. A comparison uses additional GPU memory for both assets.
+
+![Linked model comparison](docs/screenshots/comparison.png)
+
+## History, budgets, and batch work
+
+Each successful optimization saves a local output snapshot and recipe in **History**. Rename or delete runs, restore their settings and exported bytes, or select two runs for visual comparison. History remains on disk until deleted. Restored outputs are historical snapshots; rerunning uses the current source file.
+
+**Budgets** stores named limits for model bytes, texture memory, triangles, and draw calls. Zero disables a limit. The panel labels the asset currently measured in the viewport. Live rendering costs depend on camera, visibility, and display settings; memory values are estimates.
+
+In **Batch**, select a saved preset, an optional project budget, and a folder of models. Choose an output folder when starting. Jobs run sequentially in a separate worker, preserve source files, validate each output, and continue past individual failures. Each successful model gets a GLB and JSON report, alongside `batch-report.json`. Cancellation keeps completed outputs. Batch draw calls estimate primitive counts; texture memory estimates RGBA8 mipmaps. Review skipped or ambiguous preset rules in the reports, especially when channel packing depends on external inputs.
+
+## Three.js and React Three Fiber
+
+The **Export** bundle includes `load-model.ts`, `model-types.ts`, and an optional `Model.tsx` component, plus matching decoder assets and dependency fragments. Typed lookups use glTF node indices, so names sanitized by Three.js still resolve correctly. Duplicate source names are excluded from named lookups. Animation names are typed too.
+
+The R3F component renders inside your own `Canvas`, supports animation and playback props, reports loading errors, and disposes its owned model on unmount. See the generated bundle README for paths and setup. Lighting and LOD distances remain application choices.
+
+## Releases and app updates
+
+Tagged versions build Apple Silicon and Intel DMG/ZIP downloads through GitHub Actions. Signed releases support user-controlled download/restart updates; unsigned builds open the release page for manual installation. Apple signing/notarization credentials are not included in this repository. See [release setup](docs/releasing.md) for the required GitHub secrets and publishing steps.
 
 ## Code organization
 

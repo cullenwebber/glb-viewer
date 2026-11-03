@@ -6,6 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { inspectionModes } from "./MaterialControls";
 import { PlaybackBar } from "./PlaybackBar";
 import type { ViewerController } from "@/hooks/use-model-viewer";
 export function Viewport({
@@ -26,7 +27,11 @@ export function Viewport({
             <span>Perspective</span>
             <span className="mode-divider" />
             <span id="view-mode">
-              {display.wireframe ? "Wireframe" : "Material"}
+              {display.inspection !== "material"
+                ? inspectionModes[display.inspection]
+                : display.wireframe
+                  ? "Wireframe"
+                  : "Material"}
             </span>
           </div>
           <div className="flex items-center gap-1">

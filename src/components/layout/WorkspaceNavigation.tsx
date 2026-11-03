@@ -45,11 +45,23 @@ export function WorkspaceNavigation({
           <TabsTrigger data-tab="performance" value="performance">
             Performance
           </TabsTrigger>
+          <TabsTrigger data-tab="compare" value="compare">
+            Compare
+          </TabsTrigger>
           <TabsTrigger data-tab="report" value="report">
             Size report
           </TabsTrigger>
           <TabsTrigger data-tab="presets" value="presets">
             Presets
+          </TabsTrigger>
+          <TabsTrigger data-tab="history" value="history">
+            History
+          </TabsTrigger>
+          <TabsTrigger data-tab="budgets" value="budgets">
+            Budgets
+          </TabsTrigger>
+          <TabsTrigger data-tab="batch" value="batch">
+            Batch
           </TabsTrigger>
           <TabsTrigger data-tab="export" value="export">
             Export

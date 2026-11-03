@@ -1,4 +1,9 @@
 import { AlertCircle, Download, Loader2 } from "lucide-react";
+import { HistoryPanel } from "@/components/history/HistoryPanel";
+import { BudgetsPanel } from "@/components/budgets/BudgetsPanel";
+import { BatchPanel } from "@/components/batch/BatchPanel";
+import type { ViewerController } from "@/hooks/use-model-viewer";
+import { ComparisonPanel } from "@/components/comparison/ComparisonPanel";
 import { ChecksPanel } from "@/components/checks/ChecksPanel";
 import { PresetLibrary } from "@/components/presets/PresetLibrary";
 import { ExportPanel } from "@/components/export/ExportPanel";
@@ -21,8 +26,10 @@ import type { WorkbenchState } from "@/hooks/use-workbench";
 export function WorkbenchWorkspace({
   workbench: w,
   onFocus,
+  viewer,
 }: {
   workbench: WorkbenchState;
+  viewer: ViewerController;
   onFocus: (index: number) => void;
 }) {
   if (!w.open) return null;
@@ -44,6 +51,10 @@ export function WorkbenchWorkspace({
                 report: "Size report",
                 geometry: "Geometry",
                 checks: "Checks",
+                compare: "Compare",
+                history: "History",
+                budgets: "Project budgets",
+                batch: "Batch",
                 presets: "Presets",
                 export: "Export",
               }[w.tab]
@@ -89,10 +100,25 @@ export function WorkbenchWorkspace({
           <AlertDescription>{w.notice}</AlertDescription>
         </Alert>
       )}
-      {["checks", "presets", "export"].includes(w.tab) ? (
+      {w.tab === "compare" ? (
+        <ComparisonPanel workbench={w} />
+      ) : [
+          "checks",
+          "presets",
+          "export",
+          "history",
+          "budgets",
+          "batch",
+        ].includes(w.tab) ? (
         <ScrollArea className="min-h-0 flex-1">
           <div id={"wb-" + w.tab}>
-            {w.tab === "checks" ? (
+            {w.tab === "history" ? (
+              <HistoryPanel workbench={w} />
+            ) : w.tab === "budgets" ? (
+              <BudgetsPanel viewer={viewer} workbench={w} />
+            ) : w.tab === "batch" ? (
+              <BatchPanel workbench={w} />
+            ) : w.tab === "checks" ? (
               <ChecksPanel workbench={w} onFocus={onFocus} />
             ) : w.tab === "presets" ? (
               <PresetLibrary workbench={w} />

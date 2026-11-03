@@ -1,3 +1,4 @@
+import { MaterialInspection } from "./material-inspection";
 import { InspectionOverlays } from "./inspection-overlays";
 import * as THREE from "three";
 import { geometryBytes, textureMemory, type MeshMetric } from "./performance";
@@ -22,6 +23,10 @@ export class ModelViewer {
   readonly renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
   private selection = new ObjectSelection(this.scene);
+  private inspection = new MaterialInspection();
+  private comparison?: ModelViewer;
+  private cameraLinked?: ModelViewer;
+  private synchronizing = false;
   private overlays = new InspectionOverlays();
   private modelCalls = 0;
   private meshCalls = new Map<string, number>();
@@ -53,6 +58,7 @@ export class ModelViewer {
     private element: HTMLElement,
     private onChange: (state: ViewerState) => void,
     private onSource: (file: ModelFile) => void,
+    private onDisplay?: (settings: DisplaySettings) => void,
   ) {
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -69,6 +75,53 @@ export class ModelViewer {
     element.prepend(this.renderer.domElement);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
+    this.controls.addEventListener("change", () => {
+      const peer = this.cameraLinked;
+      if (!peer || this.synchronizing) return;
+      peer.synchronizing = true;
+      peer.camera.position.copy(this.camera.position);
+      peer.camera.quaternion.copy(this.camera.quaternion);
+      peer.camera.near = this.camera.near;
+      peer.camera.far = this.camera.far;
+      peer.camera.fov = this.camera.fov;
+      peer.camera.updateProjectionMatrix();
+      peer.controls.minDistance = this.controls.minDistance;
+      peer.controls.maxDistance = this.controls.maxDistance;
+      peer.controls.target.copy(this.controls.target);
+      peer.controls.update();
+      peer.synchronizing = false;
+    });
+    let pointerStart = { x: 0, y: 0 };
+    this.renderer.domElement.addEventListener("pointerdown", (event) => {
+      pointerStart = { x: event.clientX, y: event.clientY };
+    });
+    this.renderer.domElement.addEventListener("pointerup", (event) => {
+      if (
+        this.display.inspection !== "weights" ||
+        Math.hypot(
+          event.clientX - pointerStart.x,
+          event.clientY - pointerStart.y,
+        ) > 4
+      )
+        return;
+      const rect = this.renderer.domElement.getBoundingClientRect(),
+        point = new THREE.Vector3();
+      let nearest: THREE.Bone | undefined,
+        distance = 14;
+      this.model?.traverse((object) => {
+        if (!(object as THREE.Bone).isBone) return;
+        point.setFromMatrixPosition(object.matrixWorld).project(this.camera);
+        const d = Math.hypot(
+          rect.left + ((point.x + 1) * rect.width) / 2 - event.clientX,
+          rect.top + ((1 - point.y) * rect.height) / 2 - event.clientY,
+        );
+        if (point.z >= -1 && point.z <= 1 && d < distance) {
+          distance = d;
+          nearest = object as THREE.Bone;
+        }
+      });
+      if (nearest) this.selectObject(nearest.uuid);
+    });
     this.controls.autoRotateSpeed = 1.3;
     this.pmrem = new THREE.PMREMGenerator(this.renderer);
     const room = new RoomEnvironment();
@@ -115,6 +168,10 @@ export class ModelViewer {
       frameMs = 0,
       renderMs = 0;
     this.renderer.setAnimationLoop((time) => {
+      if (!this.element.clientWidth || !this.element.clientHeight) {
+        last = time;
+        return;
+      }
       const elapsed = Math.max(0, (time - last) / 1000);
       const delta = Math.min(elapsed, 0.1);
       last = time;
@@ -126,6 +183,11 @@ export class ModelViewer {
           animationTime = 0;
         }
       }
+      if (this.comparison && this.action)
+        this.comparison.syncAnimation(
+          this.clips[this.state.clipIndex]?.name || "",
+          this.action.time,
+        );
       this.controls.update();
       this.selection.update();
       if (this.display.normals !== "off" || this.display.bones)
@@ -210,7 +272,14 @@ export class ModelViewer {
   selectObject(id: string) {
     const object = this.model?.getObjectByProperty("uuid", id);
     if (!object) return;
-    this.selection.select(object);
+    if (
+      (object as THREE.Bone).isBone &&
+      this.display.inspection === "weights"
+    ) {
+      this.setDisplay({ ...this.display, weightBone: object.uuid });
+      this.onDisplay?.(this.display);
+    }
+    this.selection.select(object, this.display.inspection === "material");
     this.emit({ selectedId: id, selectedName: object.name || object.type });
     this.frame(object);
   }
@@ -232,6 +301,7 @@ export class ModelViewer {
   ) {
     this.selection.clear();
     this.overlays.clear();
+    this.inspection.restore();
     this.isolatedVisibility.clear();
     this.materialsState.clear();
     if (this.mixer && this.model) {
@@ -334,6 +404,7 @@ export class ModelViewer {
           name: object.name || object.type,
           depth,
           mesh: !!mesh.isMesh,
+          bone: !!(object as THREE.Bone).isBone,
           sourceIndex: associations?.get(object)?.nodes ?? null,
         });
       }
@@ -458,6 +529,7 @@ export class ModelViewer {
       const firstStart = performance.now();
       this.renderer.render(this.scene, this.camera);
       this.emit({
+        optimized: !!file.optimized,
         timings: {
           readMs,
           decodeMs,
@@ -476,6 +548,7 @@ export class ModelViewer {
   setDisplay(settings: DisplaySettings) {
     const selected = this.selection.object;
     this.selection.clear();
+    this.inspection.restore();
     this.display = { ...settings };
     this.grid.visible = settings.grid;
     this.controls.autoRotate = settings.rotate;
@@ -528,7 +601,9 @@ export class ModelViewer {
         }
       }
     });
-    if (selected) this.selection.select(selected);
+    if (this.model) this.inspection.apply(this.model, settings);
+    if (selected)
+      this.selection.select(selected, settings.inspection === "material");
     if (this.model) this.overlays.configure(this.model, settings);
   }
   selectAnimation(index: number) {
@@ -574,6 +649,26 @@ export class ModelViewer {
     }
     this.emit({ isolatedId: id });
   }
+  linkComparison(peer: ModelViewer) {
+    this.comparison = peer;
+    this.cameraLinked = peer;
+    peer.cameraLinked = this;
+    this.controls.dispatchEvent({ type: "change" });
+  }
+  private syncAnimation(name: string, time: number) {
+    const index = this.clips.findIndex((clip) => clip.name === name);
+    if (index < 0) return;
+    if (this.state.clipIndex !== index || !this.action)
+      this.selectAnimation(index);
+    this.action!.time = time;
+    this.mixer?.update(0);
+    if (this.state.playing) this.emit({ playing: false });
+  }
+  getUV(set: number) {
+    return this.model
+      ? this.inspection.uv(this.model, this.selection.object, set)
+      : null;
+  }
   togglePlayback() {
     if (this.action) this.emit({ playing: !this.state.playing });
   }
@@ -597,6 +692,7 @@ export class ModelViewer {
   dispose() {
     this.disposed = true;
     this.overlays.dispose();
+    this.inspection.restore();
     this.version++;
     this.renderer.setAnimationLoop(null);
     this.selection.clear();

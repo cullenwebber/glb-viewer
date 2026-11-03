@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { UpdateControl } from "@/components/updates/UpdateControl";
 import { PerformancePanel } from "@/components/performance/PerformancePanel";
 import { WatchControl } from "@/components/layout/WatchControl";
 import { WorkspaceNavigation } from "@/components/layout/WorkspaceNavigation";
@@ -120,7 +121,12 @@ export function App() {
       <AppHeader
         name={viewer.state.name}
         demo={viewer.state.demo}
-        watch={<WatchControl workbench={workbench} />}
+        watch={
+          <>
+            <UpdateControl />
+            <WatchControl workbench={workbench} />
+          </>
+        }
         onOpen={open}
         onOptimize={() => {
           workbench.setTab("report");
@@ -168,6 +174,7 @@ export function App() {
       <KeyboardHelp open={help} onOpenChange={setHelp} />
       <WorkbenchWorkspace
         workbench={workbench}
+        viewer={viewer}
         onFocus={async (index) => {
           try {
             if (

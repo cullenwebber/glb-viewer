@@ -14,7 +14,13 @@ parentPort.on("message", async ({ id, method, args }) => {
       );
     else if (method === "texture")
       result = optimizer.texture(args.id, args.output);
-    else if (method === "output") result = optimizer.output;
+    else if (method === "restore") {
+      optimizer.output = args.bytes;
+      optimizer.report = args.report;
+      optimizer.lods = args.lods;
+      optimizer.resultDoc = await optimizer.io.readBinary(args.bytes);
+      result = args.report;
+    } else if (method === "output") result = optimizer.output;
     else if (method === "checks") {
       if (args.output && !optimizer.output)
         throw new Error("Run optimization before validating output.");

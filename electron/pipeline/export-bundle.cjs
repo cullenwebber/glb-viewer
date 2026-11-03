@@ -1,5 +1,6 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
+const { handoffFiles } = require("./handoff.cjs");
 const { randomUUID } = require("node:crypto");
 async function exportBundle(parent, modelName, data, decoderRoot) {
   if (!data.bytes) throw new Error("Run optimization first.");
@@ -80,7 +81,7 @@ export async function loadModel(renderer: THREE.WebGLRenderer, url = '/models/${
   const draco = new DRACOLoader().setDecoderPath(new URL('draco/', new URL(decoderPath, window.location.href)).href);
   const ktx2 = new KTX2Loader().setTranscoderPath(new URL('basis/', new URL(decoderPath, window.location.href)).href).detectSupport(renderer);
   const loader = new GLTFLoader().setDRACOLoader(draco).setKTX2Loader(ktx2).setMeshoptDecoder(MeshoptDecoder);
-  const gltf = await loader.loadAsync(url);
+  const gltf = await loader.loadAsync(url).catch(error => { draco.dispose(); ktx2.dispose(); throw error; });
   const mixer = new THREE.AnimationMixer(gltf.scene);
   return {
     gltf, mixer,
@@ -109,15 +110,33 @@ export async function loadModel(renderer: THREE.WebGLRenderer, url = '/models/${
 
 // Optional LOD loading: pass application-specific switch distances in meters.
 export async function loadLOD(renderer: THREE.WebGLRenderer, levels: { url: string; distance: number }[]) {
-  const lod = new THREE.LOD(); const assets = [];
+  const lod = new THREE.LOD(); const assets: Awaited<ReturnType<typeof loadModel>>[] = [];
   for (const level of levels) { const asset = await loadModel(renderer, level.url); assets.push(asset); lod.addLevel(asset.gltf.scene, level.distance); }
-  return { lod, assets, dispose: () => assets.forEach(asset => asset.dispose()) };
+  return { lod, assets, dispose: () => { assets.forEach(asset => asset.dispose()); lod.removeFromParent(); } };
 }
 `;
     await fs.writeFile(path.join(directory, "load-model.ts"), loader);
+    const handoff = handoffFiles(json, base);
+    await fs.writeFile(path.join(directory, "model-types.ts"), handoff.types);
+    await fs.writeFile(path.join(directory, "Model.tsx"), handoff.r3f);
+    await fs.writeFile(
+      path.join(directory, "package.r3f.fragment.json"),
+      JSON.stringify(
+        {
+          dependencies: {
+            three: threePackage.version,
+            "@react-three/fiber": "^9.0.0",
+            react: "^19.0.0",
+            "react-dom": "^19.0.0",
+          },
+        },
+        null,
+        2,
+      ),
+    );
     await fs.writeFile(
       path.join(directory, "README.md"),
-      `# ${base}: Three.js export\n\nTested with Three.js ${threePackage.version}. Merge package.fragment.json into your application's dependencies, or use decoder files matching your existing Three.js version. Do not mix decoder versions.\n\nCopy model.glb, optional model-lod*.glb, and decoders/ into your project's public/models/${base}/ directory. Copy load-model.ts into your source tree. Its default URLs point to /models/${base}/model.glb and /models/${base}/decoders/. Pass explicit URL and decoderPath arguments if you use another location. Serve via HTTP or HTTPS.\n\nUse loadModel(renderer), then scene.add(asset.gltf.scene). To play a clip: asset.mixer.clipAction(asset.gltf.animations[0]).play(); update asset.mixer with delta seconds in your render loop. Call asset.dispose() on teardown. assets.json lists animation names, required extensions, objects, and LOD files.\n\nLOD files are separate assets, not a glTF LOD extension. Call loadLOD with explicit distances appropriate to your scene. Animated LODs need their mixers updated together to stay synchronized. Simplification skips skinned or morph-target meshes.\n\nLighting and tone mapping belong to your application. Configure your scene before calling renderer.compileAsync(asset.gltf.scene, camera, scene) to precompile shaders. Strict CSP applications may need dedicated decoder-worker policies for the bundled Emscripten decoders.\n\nThe original Blender export was not changed. See optimization-report.json for measured sizes and the applied recipe.\n`,
+      `# ${base}: Three.js export\n\nTested with Three.js ${threePackage.version}. Merge package.fragment.json into your application's dependencies, or use decoder files matching your existing Three.js version. Do not mix decoder versions.\n\nCopy model.glb, optional model-lod*.glb, and decoders/ into your project's public/models/${base}/ directory. Copy load-model.ts into your source tree. Its default URLs point to /models/${base}/model.glb and /models/${base}/decoders/. Pass explicit URL and decoderPath arguments if you use another location. Serve via HTTP or HTTPS.\n\nUse loadModel(renderer), then scene.add(asset.gltf.scene). To play a clip: asset.mixer.clipAction(asset.gltf.animations[0]).play(); update asset.mixer with delta seconds in your render loop. Call asset.dispose() on teardown. assets.json lists animation names, required extensions, objects, and LOD files.\n\nLOD files are separate assets, not a glTF LOD extension. Call loadLOD with explicit distances appropriate to your scene. Animated LODs need their mixers updated together to stay synchronized. Simplification skips skinned or morph-target meshes.\n\nLighting and tone mapping belong to your application. Configure your scene before calling renderer.compileAsync(asset.gltf.scene, camera, scene) to precompile shaders. Strict CSP applications may need dedicated decoder-worker policies for the bundled Emscripten decoders.\n\nReact Three Fiber: optionally merge package.r3f.fragment.json, copy Model.tsx, model-types.ts, and load-model.ts into your source tree, then render <Model /> inside Canvas. Pass an animation name and playing flag for playback. Each component owns its asset and disposes it on unmount; an onError callback or React error boundary can handle loading failures. model-types.ts exports typed object and animation names, getObject(), and getAnimation(). Duplicate object names are excluded from named lookups; parser node associations preserve access by index.\n\nThe original Blender export was not changed. See optimization-report.json for measured sizes and the applied recipe.\n`,
     );
     try {
       await fs.writeFile(

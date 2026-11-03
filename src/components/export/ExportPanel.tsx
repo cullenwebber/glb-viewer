@@ -45,8 +45,9 @@ export function ExportPanel({ workbench: w }: { workbench: WorkbenchState }) {
           <h3>Three.js bundle</h3>
           <p>
             Creates a new folder with model.glb, optional LOD models, bundled
-            Draco and Basis decoders, load-model.ts, animation and object names,
-            the measured report, and integration instructions.
+            Draco and Basis decoders, a vanilla TypeScript loader, a React Three
+            Fiber component, typed animation and object lookups, the measured
+            report, and integration instructions.
           </p>
           <Button
             id="export-bundle"

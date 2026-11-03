@@ -250,6 +250,20 @@ export class Optimizer {
     );
     const geometryOptions = geometryCompression(plan.geometryOptions);
     const doc = cloneDocument(this.original);
+    // glTF permits omitted inverse-bind matrices (identity). Quantization needs explicit accessors.
+    for (const skin of doc.getRoot().listSkins()) {
+      if (skin.getInverseBindMatrices()) continue;
+      const values = new Float32Array(skin.listJoints().length * 16);
+      for (let i = 0; i < skin.listJoints().length; i++)
+        for (let j = 0; j < 4; j++) values[i * 16 + j * 5] = 1;
+      skin.setInverseBindMatrices(
+        doc
+          .createAccessor()
+          .setType("MAT4")
+          .setArray(values)
+          .setBuffer(doc.getRoot().listBuffers()[0] || doc.createBuffer()),
+      );
+    }
     const sourceTextures = doc.getRoot().listTextures();
     const ids = new Map(
       sourceTextures.map((texture, index) => [texture, `t${index}`]),

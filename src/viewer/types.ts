@@ -4,12 +4,14 @@ export type SceneNode = {
   name: string;
   depth: number;
   mesh: boolean;
+  bone: boolean;
   sourceIndex: number | null;
 };
 export type ViewerState = {
   name: string;
   size: number;
   demo: boolean;
+  optimized: boolean;
   loading: boolean;
   error: string | null;
   triangles: number;
@@ -44,6 +46,22 @@ export type ViewerState = {
   isolatedId: string | null;
 };
 export type DisplaySettings = {
+  inspection:
+    | "material"
+    | "baseColor"
+    | "roughness"
+    | "metalness"
+    | "normalMap"
+    | "normals"
+    | "ao"
+    | "alpha"
+    | "checker"
+    | "orientation"
+    | "weights"
+    | "cost";
+  uvSet: number;
+  costMetric: "triangles" | "materials" | "textures";
+  weightBone: string;
   normals: "off" | "vertex" | "face";
   normalLength: number;
   normalsSelectedOnly: boolean;
@@ -61,6 +79,10 @@ export type DisplaySettings = {
   pixelRatio: number;
 };
 export const defaultDisplay: DisplaySettings = {
+  inspection: "material",
+  uvSet: 0,
+  costMetric: "triangles",
+  weightBone: "",
   normals: "off",
   normalLength: 2,
   normalsSelectedOnly: false,
@@ -81,6 +103,7 @@ export const initialViewerState: ViewerState = {
   name: "Studio sample",
   size: 0,
   demo: true,
+  optimized: false,
   loading: false,
   error: null,
   triangles: 0,

@@ -1,3 +1,4 @@
+import { useBatch } from "./use-batch";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   Analysis,
@@ -38,6 +39,7 @@ export function useWorkbench(preview: (file: ModelFile) => Promise<void>) {
     setNotice(message);
     setError(isError);
   }, []);
+  const batch = useBatch(notify);
   const setPlan = useCallback((plan: Plan) => {
     setGeometry(plan.geometry);
     setGeometryOptions(plan.geometryOptions || {});
@@ -232,6 +234,14 @@ export function useWorkbench(preview: (file: ModelFile) => Promise<void>) {
       setReport(next);
       setDirty(false);
       setTab("report");
+      try {
+        await window.desktop!.saveHistory(token, createRecipe(analysis, plan));
+      } catch (error) {
+        next.warnings = [
+          ...(next.warnings || []),
+          "History could not be saved: " + errorMessage(error),
+        ];
+      }
       notify(
         next.warnings?.length
           ? "Optimization complete. " + next.warnings.join(" ")
@@ -291,6 +301,24 @@ export function useWorkbench(preview: (file: ModelFile) => Promise<void>) {
       if (url) URL.revokeObjectURL(url);
     }
   }
+  async function restoreRun(id: string) {
+    if (!analysis || phase !== "idle") return;
+    setPhase("running");
+    try {
+      const saved = await window.desktop!.restoreHistory(token, id);
+      const matched = applyRecipe(analysis, saved.recipe);
+      setPlan(matched.plan);
+      setReport(saved.report);
+      setDirty(false);
+      notify(
+        "Run restored. Output is the saved snapshot; a new optimization uses the current source.",
+      );
+    } catch (error) {
+      notify(errorMessage(error), true);
+    } finally {
+      setPhase("idle");
+    }
+  }
   async function exportModel() {
     try {
       const file = await window.desktop!.exportOptimized(token);
@@ -308,6 +336,7 @@ export function useWorkbench(preview: (file: ModelFile) => Promise<void>) {
     }
   }
   return {
+    batch,
     open,
     setOpen,
     source,
@@ -341,6 +370,7 @@ export function useWorkbench(preview: (file: ModelFile) => Promise<void>) {
     cancel,
     viewOriginal,
     viewOptimized,
+    restoreRun,
     exportModel,
     exportBundle,
     notify,

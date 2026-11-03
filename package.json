@@ -1,8 +1,8 @@
 {
   "name": "glb-viewer",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "A local-first glTF and GLB inspector for macOS",
+  "description": "A local-first macOS workspace to inspect, debug, compare, and optimize glTF assets for Three.js.",
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -10,8 +10,8 @@
     "desktop:dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && node scripts/start-electron.mjs --dev\"",
     "build": "node scripts/copy-decoders.mjs && tsc --noEmit && vite build",
     "package:mac": "npm run build && electron-builder --mac --dir",
-    "dist:mac": "npm run build && electron-builder --mac dmg",
-    "test": "npm run build && node scripts/optimizer-test.mjs && node scripts/inspection-test.mjs && node scripts/check-fixes-test.mjs && node scripts/pipeline-test.mjs && node scripts/recipe-test.mjs && node scripts/smoke-test.mjs && node scripts/workbench-test.mjs && node scripts/pipeline-ui-test.mjs",
+    "dist:mac": "npm run build && electron-builder --mac dmg zip",
+    "test": "npm run build && node scripts/optimizer-test.mjs && node scripts/inspection-test.mjs && node scripts/check-fixes-test.mjs && node scripts/pipeline-test.mjs && node scripts/recipe-test.mjs && node scripts/studio-test.mjs && node scripts/smoke-test.mjs && node scripts/workbench-test.mjs && node scripts/pipeline-ui-test.mjs && node scripts/studio-ui-test.mjs",
     "format": "prettier --write src electron scripts index.html vite.config.ts tsconfig.json package.json components.json README.md --ignore-unknown"
   },
   "build": {
@@ -28,7 +28,8 @@
     "mac": {
       "category": "public.app-category.developer-tools",
       "target": [
-        "dmg"
+        "dmg",
+        "zip"
       ],
       "icon": "assets/icon.icns"
     },
@@ -41,7 +42,15 @@
         "name": "glTF 3D Model",
         "role": "Viewer"
       }
-    ]
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "cullenwebber",
+        "repo": "glb-viewer"
+      }
+    ],
+    "artifactName": "GLB-Viewer-${version}-${arch}.${ext}"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
@@ -51,6 +60,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "draco3dgltf": "^1.5.9",
+    "electron-updater": "^6.8.11",
     "gltf-validator": "^2.0.0-dev.3.10",
     "ktx-parse": "^2.0.0",
     "ktx2-encoder": "^0.6.0",
@@ -68,6 +78,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
+    "@react-three/fiber": "^9.8.2",
     "@tailwindcss/vite": "^4.3.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
@@ -83,5 +94,11 @@
     "vite": "^8.3.5",
     "wait-on": "^9.5.1"
   },
-  "type": "module"
+  "type": "module",
+  "author": "Cullen Webber",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cullenwebber/glb-viewer.git"
+  },
+  "homepage": "https://github.com/cullenwebber/glb-viewer"
 }

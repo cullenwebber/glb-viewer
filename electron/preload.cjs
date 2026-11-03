@@ -1,5 +1,39 @@
 const { contextBridge, ipcRenderer, webUtils } = require("electron");
 contextBridge.exposeInMainWorld("desktop", {
+  updateState: () => ipcRenderer.invoke("update-state"),
+  checkUpdates: () => ipcRenderer.invoke("check-updates"),
+  downloadUpdate: () => ipcRenderer.invoke("download-update"),
+  installUpdate: () => ipcRenderer.invoke("install-update"),
+  openReleases: () => ipcRenderer.invoke("open-releases"),
+  onUpdate: (callback) => {
+    const listener = (_event, state) => callback(state);
+    ipcRenderer.on("update-state", listener);
+    return () => ipcRenderer.removeListener("update-state", listener);
+  },
+  onShowUpdates: (callback) => {
+    ipcRenderer.on("show-updates", callback);
+    return () => ipcRenderer.removeListener("show-updates", callback);
+  },
+  listHistory: (key) => ipcRenderer.invoke("list-history", key),
+  saveHistory: (token, recipe) =>
+    ipcRenderer.invoke("save-history", token, recipe),
+  renameHistory: (id, name) => ipcRenderer.invoke("rename-history", id, name),
+  deleteHistory: (id) => ipcRenderer.invoke("delete-history", id),
+  historyBytes: (id) => ipcRenderer.invoke("history-bytes", id),
+  restoreHistory: (token, id) =>
+    ipcRenderer.invoke("restore-history", token, id),
+  listBudgets: () => ipcRenderer.invoke("list-budgets"),
+  saveBudget: (value) => ipcRenderer.invoke("save-budget", value),
+  deleteBudget: (id) => ipcRenderer.invoke("delete-budget", id),
+  chooseBatch: () => ipcRenderer.invoke("choose-batch"),
+  runBatch: (id, preset, budget) =>
+    ipcRenderer.invoke("run-batch", id, preset, budget),
+  cancelBatch: () => ipcRenderer.invoke("cancel-batch"),
+  onBatchProgress: (callback) => {
+    const listener = (_event, row) => callback(row);
+    ipcRenderer.on("batch-progress", listener);
+    return () => ipcRenderer.removeListener("batch-progress", listener);
+  },
   checkModel: (token, output) =>
     ipcRenderer.invoke("checks-model", token, output),
   watchModel: (token, enabled) =>

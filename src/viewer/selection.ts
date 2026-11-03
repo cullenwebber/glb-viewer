@@ -6,12 +6,12 @@ export class ObjectSelection {
   private helper?: THREE.Box3Helper;
   object?: THREE.Object3D;
   constructor(private scene: THREE.Scene) {}
-  select(object: THREE.Object3D) {
+  select(object: THREE.Object3D, tint = true) {
     this.clear();
     this.object = object;
     object.traverse((node) => {
       const mesh = node as THREE.Mesh;
-      if (!mesh.isMesh) return;
+      if (!mesh.isMesh || !tint) return;
       this.originals.set(mesh, mesh.material);
       const highlight = (material: THREE.Material) => {
         const copy = material.clone() as THREE.MeshStandardMaterial;

@@ -6,6 +6,7 @@ const {
   protocol,
   net,
   Menu,
+  shell,
 } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs/promises");
@@ -49,6 +50,10 @@ const modelPaths = new Map();
 const importedBySource = new Map();
 let optimizerSession;
 let library;
+let history, budgets, batch, updates;
+const batches = new Map();
+const { createHistory } = require("./pipeline/history.cjs");
+const { createBudgets } = require("./pipeline/budgets.cjs");
 const watcher = new ModelWatcher(
   async (file) => {
     if (optimizerSession?.busy) {
@@ -124,7 +129,144 @@ app.on("open-file", (event, file) => {
   else pending = file;
 });
 app.whenReady().then(() => {
+  const { autoUpdater } = require("electron-updater");
+  updates = require("./pipeline/updates.cjs").createUpdates({
+    app,
+    autoUpdater,
+    shell,
+    fetch: net.fetch,
+    send: (state) => window?.webContents.send("update-state", state),
+  });
+  ipcMain.handle("update-state", () => updates.state());
+  ipcMain.handle("check-updates", () => updates.check());
+  ipcMain.handle("download-update", () => updates.download());
+  ipcMain.handle("install-update", () => {
+    if (optimizerSession?.busy || batch)
+      throw new Error(
+        "Finish or cancel active jobs before installing an update.",
+      );
+    return updates.install();
+  });
+  ipcMain.handle("open-releases", () => updates.openReleases());
   library = createLibrary(app.getPath("userData"));
+  history = createHistory(app.getPath("userData"));
+  budgets = createBudgets(app.getPath("userData"));
+  ipcMain.handle("list-history", (_event, key) => history.list(key));
+  ipcMain.handle("save-history", async (_event, token, recipe) => {
+    const session = activeSession(token);
+    if (!session.hasOutput || session.busy)
+      throw new Error("Finish optimization first.");
+    const file = modelPaths.get(token),
+      key = createHash("sha256").update(file).digest("hex").slice(0, 32);
+    return history.save(
+      key,
+      "Run " + new Date().toLocaleString(),
+      recipe,
+      await workerRequest(session, "bundle"),
+    );
+  });
+  ipcMain.handle("rename-history", (_event, id, name) =>
+    history.rename(id, name),
+  );
+  ipcMain.handle("delete-history", (_event, id) => history.delete(id));
+  ipcMain.handle("history-bytes", (_event, id) => history.bytes(id));
+  ipcMain.handle("restore-history", async (_event, token, id) => {
+    const session = activeSession(token);
+    if (session.busy) throw new Error("Wait for optimization to finish.");
+    const data = await history.get(id),
+      key = createHash("sha256")
+        .update(modelPaths.get(token))
+        .digest("hex")
+        .slice(0, 32);
+    if (data.sourceKey !== key)
+      throw new Error("Open the source model for this run first.");
+    await workerRequest(session, "restore", data);
+    session.hasOutput = true;
+    return { report: data.report, recipe: data.recipe };
+  });
+  ipcMain.handle("list-budgets", () => budgets.list());
+  ipcMain.handle("save-budget", (_event, value) => budgets.save(value));
+  ipcMain.handle("delete-budget", (_event, id) => budgets.delete(id));
+  ipcMain.handle("choose-batch", async () => {
+    const selected = await dialog.showOpenDialog(window, {
+      properties: ["openDirectory"],
+      title: "Choose models folder",
+    });
+    if (selected.canceled) return null;
+    const { discoverModels } = await import("./pipeline/batch.mjs"),
+      jobs = await discoverModels(selected.filePaths[0]),
+      id = randomUUID();
+    batches.set(id, jobs);
+    return { id, names: jobs.map((job) => job.relative) };
+  });
+  ipcMain.handle("run-batch", async (_event, id, presetId, budgetId) => {
+    if (batch) throw new Error("A batch is already running.");
+    const jobs = batches.get(id);
+    if (!jobs?.length) throw new Error("Choose a folder with models first.");
+    const preset = (await library.list()).find((p) => p.id === presetId);
+    if (!preset) throw new Error("Choose a saved preset.");
+    const selected = await dialog.showOpenDialog(window, {
+      properties: ["openDirectory", "createDirectory"],
+      title: "Choose output folder",
+    });
+    if (selected.canceled) return null;
+    const output = path.join(
+      selected.filePaths[0],
+      "glb-batch-" + randomUUID().slice(0, 8),
+    );
+    await fs.mkdir(output);
+    const budget = (await budgets.list()).find((b) => b.id === budgetId);
+    const worker = new Worker(path.join(__dirname, "batch-worker.mjs"), {
+      workerData: { jobs, output, recipe: preset.recipe, budget },
+    });
+    return new Promise((resolve, reject) => {
+      batch = { worker, output, resolve };
+      worker.on("message", (message) => {
+        if (message.row)
+          window?.webContents.send("batch-progress", message.row);
+        else {
+          batch = null;
+          worker.terminate();
+          message.error
+            ? reject(new Error(message.error))
+            : resolve(message.result);
+        }
+      });
+      worker.on("error", (error) => {
+        batch = null;
+        reject(error);
+      });
+    });
+  });
+  ipcMain.handle("cancel-batch", async () => {
+    if (!batch) return;
+    const current = batch;
+    batch = null;
+    await current.worker.terminate();
+    async function cleanup(folder) {
+      for (const entry of await fs.readdir(folder, { withFileTypes: true })) {
+        const file = path.join(folder, entry.name);
+        if (entry.isDirectory()) await cleanup(file);
+        else if (entry.name.endsWith(".partial"))
+          await fs.rm(file, { force: true });
+      }
+    }
+    await cleanup(current.output);
+    let report = { rows: [] };
+    try {
+      report = JSON.parse(
+        await fs.readFile(
+          path.join(current.output, "batch-report.json"),
+          "utf8",
+        ),
+      );
+    } catch {}
+    await fs.writeFile(
+      path.join(current.output, "batch-report.json"),
+      JSON.stringify({ ...report, cancelled: true }, null, 2),
+    );
+    current.resolve({ cancelled: true, output: current.output });
+  });
   protocol.handle("viewer", async (request) => {
     try {
       const url = new URL(request.url),
@@ -394,6 +536,10 @@ app.whenReady().then(() => {
   else window.loadURL("viewer://app/index.html");
   ipcMain.on("renderer-ready", () => {
     rendererReady = true;
+    if (app.isPackaged) {
+      const timer = setTimeout(() => void updates.check(), 15000);
+      timer.unref();
+    }
     if (pending) {
       const file = pending;
       pending = null;
@@ -405,7 +551,27 @@ app.whenReady().then(() => {
   });
   Menu.setApplicationMenu(
     Menu.buildFromTemplate([
-      { role: "appMenu" },
+      {
+        label: app.name,
+        submenu: [
+          { role: "about" },
+          {
+            label: "Check for updates…",
+            click: async () => {
+              await updates.check();
+              window.webContents.send("show-updates");
+            },
+          },
+          { type: "separator" },
+          { role: "services" },
+          { type: "separator" },
+          { role: "hide" },
+          { role: "hideOthers" },
+          { role: "unhide" },
+          { type: "separator" },
+          { role: "quit" },
+        ],
+      },
       {
         label: "File",
         submenu: [
@@ -430,5 +596,6 @@ app.whenReady().then(() => {
 app.on("window-all-closed", () => {
   watcher.stop();
   stopOptimizer();
+  batch?.worker.terminate();
   app.quit();
 });

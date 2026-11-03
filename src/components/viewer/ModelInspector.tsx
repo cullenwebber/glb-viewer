@@ -1,5 +1,6 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ModelDetails } from "./ModelDetails";
+import { MaterialControls } from "./MaterialControls";
 import { InspectionControls } from "./InspectionControls";
 import { DisplayControls } from "./DisplayControls";
 import { LightingControls } from "./LightingControls";
@@ -18,6 +19,7 @@ export function ModelInspector({ viewer }: { viewer: ViewerController }) {
             display={viewer.display}
             onChange={viewer.updateDisplay}
           />
+          <MaterialControls viewer={viewer} />
           <InspectionControls
             display={viewer.display}
             onChange={viewer.updateDisplay}

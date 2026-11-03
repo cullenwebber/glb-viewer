@@ -20,8 +20,11 @@ export function useModelViewer(onSource: (file: ModelFile) => void) {
   useEffect(() => {
     if (!viewportRef.current) return;
     try {
-      engine.current = new ModelViewer(viewportRef.current, setState, (file) =>
-        sourceHandler.current(file),
+      engine.current = new ModelViewer(
+        viewportRef.current,
+        setState,
+        (file) => sourceHandler.current(file),
+        setDisplay,
       );
     } catch (error) {
       setState((previous) => ({ ...previous, error: errorMessage(error) }));
@@ -60,6 +63,7 @@ export function useModelViewer(onSource: (file: ModelFile) => void) {
   );
   return {
     viewportRef,
+    getUV: (set: number) => engine.current?.getUV(set),
     state,
     display,
     updateDisplay,

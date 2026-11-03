@@ -1,0 +1,87 @@
+{
+  "name": "glb-viewer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A local-first glTF and GLB inspector for macOS",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "desktop": "npm run build && node scripts/start-electron.mjs",
+    "desktop:dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && node scripts/start-electron.mjs --dev\"",
+    "build": "node scripts/copy-decoders.mjs && tsc --noEmit && vite build",
+    "package:mac": "npm run build && electron-builder --mac --dir",
+    "dist:mac": "npm run build && electron-builder --mac dmg",
+    "test": "npm run build && node scripts/optimizer-test.mjs && node scripts/check-fixes-test.mjs && node scripts/pipeline-test.mjs && node scripts/recipe-test.mjs && node scripts/smoke-test.mjs && node scripts/workbench-test.mjs && node scripts/pipeline-ui-test.mjs",
+    "format": "prettier --write src electron scripts index.html vite.config.ts tsconfig.json package.json components.json README.md --ignore-unknown"
+  },
+  "build": {
+    "appId": "com.glbviewer.app",
+    "productName": "GLB Viewer",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg"
+      ],
+      "icon": "assets/icon.icns"
+    },
+    "fileAssociations": [
+      {
+        "ext": [
+          "glb",
+          "gltf"
+        ],
+        "name": "glTF 3D Model",
+        "role": "Viewer"
+      }
+    ]
+  },
+  "dependencies": {
+    "@fontsource-variable/geist": "^5.3.0",
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/extensions": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "draco3dgltf": "^1.5.9",
+    "gltf-validator": "^2.0.0-dev.3.10",
+    "ktx-parse": "^2.0.0",
+    "ktx2-encoder": "^0.6.0",
+    "lucide-react": "^1.66.0",
+    "meshoptimizer": "^1.3.0",
+    "radix-ui": "^1.8.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "recharts": "^3.8.0",
+    "sharp": "^0.35.5",
+    "sonner": "^2.0.8",
+    "tailwind-merge": "^3.7.0",
+    "three": "^0.187.0",
+    "tw-animate-css": "^1.4.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@tailwindcss/vite": "^4.3.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.187.0",
+    "@vitejs/plugin-react": "^6.2.1",
+    "concurrently": "^10.0.6",
+    "electron": "^45.2.1",
+    "electron-builder": "^26.18.0",
+    "prettier": "^3.9.10",
+    "shadcn": "^4.23.0",
+    "tailwindcss": "^4.3.4",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "wait-on": "^9.5.1"
+  },
+  "type": "module"
+}

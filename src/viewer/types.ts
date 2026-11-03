@@ -1,0 +1,101 @@
+import type { MeshMetric } from "./performance";
+export type SceneNode = {
+  id: string;
+  name: string;
+  depth: number;
+  mesh: boolean;
+  sourceIndex: number | null;
+};
+export type ViewerState = {
+  name: string;
+  size: number;
+  demo: boolean;
+  loading: boolean;
+  error: string | null;
+  triangles: number;
+  vertices: number;
+  meshes: number;
+  materials: number;
+  textures: number;
+  dimensions: string;
+  nodes: SceneNode[];
+  nodeCount: number;
+  clips: { name: string; duration: number }[];
+  clipIndex: number;
+  playing: boolean;
+  time: number;
+  duration: number;
+  fps: number;
+  drawCalls: number;
+  modelDrawCalls: number;
+  selectedId: string | null;
+  selectedName: string | null;
+  meshMetrics: MeshMetric[];
+  textureBytes: number;
+  geometryBytes: number;
+  frameMs: number;
+  renderMs: number;
+  timings: {
+    readMs: number;
+    decodeMs: number;
+    compileMs: number;
+    firstRenderMs: number;
+  } | null;
+  isolatedId: string | null;
+};
+export type DisplaySettings = {
+  grid: boolean;
+  wireframe: boolean;
+  rotate: boolean;
+  background: string;
+  environment: "studio" | "neutral" | "direct";
+  exposure: number;
+  shadows: boolean;
+  transparency: boolean;
+  transmission: boolean;
+  pixelRatio: number;
+};
+export const defaultDisplay: DisplaySettings = {
+  grid: true,
+  wireframe: false,
+  rotate: false,
+  background: "#0a0a0a",
+  environment: "studio",
+  exposure: 1,
+  shadows: false,
+  transparency: true,
+  transmission: true,
+  pixelRatio: 1.5,
+};
+export const initialViewerState: ViewerState = {
+  name: "Studio sample",
+  size: 0,
+  demo: true,
+  loading: false,
+  error: null,
+  triangles: 0,
+  vertices: 0,
+  meshes: 0,
+  materials: 0,
+  textures: 0,
+  dimensions: "—",
+  nodes: [],
+  nodeCount: 0,
+  clips: [],
+  clipIndex: 0,
+  playing: false,
+  time: 0,
+  duration: 0,
+  fps: 0,
+  drawCalls: 0,
+  modelDrawCalls: 0,
+  selectedId: null,
+  selectedName: null,
+  meshMetrics: [],
+  textureBytes: 0,
+  geometryBytes: 0,
+  frameMs: 0,
+  renderMs: 0,
+  timings: null,
+  isolatedId: null,
+};

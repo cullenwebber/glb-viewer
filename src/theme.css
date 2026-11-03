@@ -1,0 +1,39 @@
+/* T3 Code's default dark palette, shared by the shadcn components and app chrome. */
+.dark {
+  color-scheme: dark;
+  --background: #000;
+  --foreground: #ededed;
+  --card: #000;
+  --card-foreground: var(--foreground);
+  --popover: #111;
+  --popover-foreground: #f5f5f5;
+  --primary: #ededed;
+  --primary-foreground: #0a0a0a;
+  --secondary: #ffffff08;
+  --secondary-foreground: var(--foreground);
+  --muted: #0a0a0a;
+  --muted-foreground: #888888;
+  --accent: #191919;
+  --accent-foreground: #f7f9ff;
+  --destructive: oklch(70.4% 0.191 22.216);
+  --border: #242424;
+  --input: #ffffff2e;
+  --ring: #3b82f6;
+  --surface-raised: #111;
+  --viewport-background: #0a0a0a;
+  --checker-background: #111111;
+  --checker-foreground: #181818;
+  --chart-1: var(--primary);
+  --chart-2: #444444;
+  --chart-3: #60a5fa;
+  --chart-4: #818cf8;
+  --chart-5: #a1a1aa;
+  --sidebar: var(--background);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+}

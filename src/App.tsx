@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PerformancePanel } from "@/components/performance/PerformancePanel";
-import { WorkspaceNavigation } from "@/components/layout/WorkspaceNavigation";
+import { WorkspaceSidebar } from "@/components/layout/WorkspaceSidebar";
+import { ResizableWorkspace } from "@/components/layout/ResizableWorkspace";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { SceneSidebar } from "@/components/layout/SceneSidebar";
 import { KeyboardHelp } from "@/components/layout/KeyboardHelp";
@@ -123,25 +124,58 @@ export function App() {
         demo={!workbench.source && viewer.state.demo}
         onOpen={open}
         onHelp={() => setHelp(true)}
-        navigation={navigation}
       />
-      <WorkspaceNavigation workbench={workbench} navigation={navigation} />
-      <div
-        className={`app-workspace ${workbench.tab === "performance" ? "performance-mode" : ""}`}
-        style={workbench.open ? { display: "none" } : undefined}
-      >
-        <SceneSidebar
-          state={viewer.state}
-          onSelect={viewer.selectObject}
-          onClearSelection={viewer.clearSelection}
-          onHelp={() => setHelp(true)}
-        />
-        <Viewport viewer={viewer} dragging={dragging} onOpen={open} />
-        {workbench.tab === "performance" ? (
-          <PerformancePanel viewer={viewer} />
-        ) : (
-          <ModelInspector viewer={viewer} />
-        )}
+      <div className="application-shell">
+        <WorkspaceSidebar workbench={workbench} navigation={navigation} />
+        <div className="asset-stage">
+          <div
+            className={`app-workspace ${workbench.tab === "performance" ? "performance-mode" : ""}`}
+            style={workbench.open ? { display: "none" } : undefined}
+          >
+            <ResizableWorkspace
+              id="model-panels"
+              leftLabel="scene tree"
+              rightLabel="inspector"
+              left={
+                <SceneSidebar
+                  state={viewer.state}
+                  onSelect={viewer.selectObject}
+                  onClearSelection={viewer.clearSelection}
+                  onHelp={() => setHelp(true)}
+                />
+              }
+              center={
+                <Viewport viewer={viewer} dragging={dragging} onOpen={open} />
+              }
+              right={
+                workbench.tab === "performance" ? (
+                  <PerformancePanel viewer={viewer} />
+                ) : (
+                  <ModelInspector viewer={viewer} />
+                )
+              }
+            />
+          </div>
+          <WorkbenchWorkspace
+            workbench={workbench}
+            viewer={viewer}
+            onFocus={async (index) => {
+              try {
+                if (
+                  workbench.source &&
+                  (viewer.state.name !== workbench.source.name ||
+                    viewer.state.error)
+                )
+                  await viewer.load(workbench.source);
+                workbench.setTab("model");
+                workbench.setOpen(false);
+                viewer.focusSourceNode(index);
+              } catch (error) {
+                workbench.notify(errorMessage(error), true);
+              }
+            }}
+          />
+        </div>
       </div>
       <Input
         ref={filesRef}
@@ -164,25 +198,6 @@ export function App() {
         }}
       />
       <KeyboardHelp open={help} onOpenChange={setHelp} />
-      <WorkbenchWorkspace
-        workbench={workbench}
-        viewer={viewer}
-        onFocus={async (index) => {
-          try {
-            if (
-              workbench.source &&
-              (viewer.state.name !== workbench.source.name ||
-                viewer.state.error)
-            )
-              await viewer.load(workbench.source);
-            workbench.setTab("model");
-            workbench.setOpen(false);
-            viewer.focusSourceNode(index);
-          } catch (error) {
-            workbench.notify(errorMessage(error), true);
-          }
-        }}
-      />
       <Toaster theme="dark" position="bottom-center" />
     </TooltipProvider>
   );

@@ -21,7 +21,7 @@ export const SceneTree = memo(function SceneTree({
           data-node-id={node.id}
           aria-pressed={selectedId === node.id}
           onClick={() => onSelect(node.id)}
-          className="h-auto w-full justify-start gap-2 py-2 text-left text-xs"
+          className="h-auto min-w-0 w-full justify-start gap-2 py-2 text-left text-xs"
           style={{ paddingLeft: 12 + Math.min(node.depth, 8) * 12 }}
         >
           {node.mesh ? (
@@ -29,7 +29,7 @@ export const SceneTree = memo(function SceneTree({
           ) : (
             <Layers className="size-3.5 shrink-0 text-primary/70" />
           )}
-          <span className="truncate">{node.name}</span>
+          <span className="min-w-0 flex-1 truncate text-left">{node.name}</span>
         </Button>
       ))}
     </div>

@@ -26,6 +26,7 @@ export function KeyboardHelp({
         <div className="space-y-4 py-3 text-sm">
           {[
             ["⌘ O", "Open a model"],
+            ["↑ / ↓, Enter", "Choose a tool in the sidebar"],
             ["F", "Frame the model"],
             ["Space", "Play / pause animation"],
           ].map(([key, action]) => (

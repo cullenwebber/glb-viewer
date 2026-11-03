@@ -8,6 +8,8 @@ A local-first Mac app for preparing Blender assets for Three.js.
 
 ## Features
 
+- Labelled tool navigation and draggable panel widths.
+
 - GLB/glTF preview, scene selection, mesh isolation, and animation playback.
 - Vertex/face normals, bones, bone weights, face orientation, and cost heatmaps.
 - Material solo views, UV checker, and UV layout inspection.

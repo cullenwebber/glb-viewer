@@ -1,17 +1,17 @@
 {
   "name": "glb-viewer",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "description": "A local-first macOS workspace to inspect, debug, compare, and optimize glTF assets for Three.js.",
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "desktop": "npm run build && node scripts/start-electron.mjs",
-    "desktop:dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && node scripts/start-electron.mjs --dev\"",
+    "desktop": "npm run package:mac && node scripts/start-electron.mjs --packaged",
+    "desktop:dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && npm run package:mac && node scripts/start-electron.mjs --packaged --dev\"",
     "build": "node scripts/copy-decoders.mjs && tsc --noEmit && vite build",
     "package:mac": "npm run build && electron-builder --mac --dir",
     "dist:mac": "npm run build && electron-builder --mac dmg zip",
-    "test": "npm run build && node scripts/optimizer-test.mjs && node scripts/inspection-test.mjs && node scripts/check-fixes-test.mjs && node scripts/pipeline-test.mjs && node scripts/recipe-test.mjs && node scripts/studio-test.mjs && node scripts/smoke-test.mjs && node scripts/workbench-test.mjs && node scripts/pipeline-ui-test.mjs && node scripts/studio-ui-test.mjs && node scripts/navigation-test.mjs",
+    "test": "npm run build && node scripts/optimizer-test.mjs && node scripts/inspection-test.mjs && node scripts/check-fixes-test.mjs && node scripts/pipeline-test.mjs && node scripts/recipe-test.mjs && node scripts/studio-test.mjs && node scripts/smoke-test.mjs && node scripts/workbench-test.mjs && node scripts/pipeline-ui-test.mjs && node scripts/studio-ui-test.mjs && node scripts/navigation-test.mjs && node scripts/resize-test.mjs && node scripts/branding-test.mjs",
     "format": "prettier --write src electron scripts index.html vite.config.ts tsconfig.json package.json components.json README.md --ignore-unknown"
   },
   "build": {
@@ -23,7 +23,8 @@
     "files": [
       "dist/**/*",
       "electron/**/*",
-      "package.json"
+      "package.json",
+      "assets/icon.png"
     ],
     "mac": {
       "category": "public.app-category.developer-tools",
@@ -69,6 +70,7 @@
     "radix-ui": "^1.8.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "react-resizable-panels": "^4.17.0",
     "recharts": "^3.8.0",
     "sharp": "^0.35.5",
     "sonner": "^2.0.8",

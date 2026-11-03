@@ -1,6 +1,6 @@
 # Releases and updates
 
-GitHub Actions builds Mac installers from this repository. `Checks` runs on pushes and pull requests. `Build and release` runs when a `v*` tag is pushed; manual dispatch produces downloadable workflow artifacts without publishing a release.
+GitHub Actions builds Mac installers from this repository. `Checks` runs on pushes and pull requests. `Build and release` runs when a `v*` tag is pushed; manual dispatch produces downloadable workflow artifacts without publishing a release unless an existing `release_tag` is supplied. This lets you retry an unpublished tag using corrected workflow configuration without moving the tag.
 
 ## Publish a version
 
@@ -24,7 +24,7 @@ Unsigned builds use manual updates. For signed distribution, configure these **G
 | `APPLE_APP_SPECIFIC_PASSWORD` | App-specific password used for notarization                  |
 | `APPLE_TEAM_ID`               | Apple Developer team identifier                              |
 
-The workflow passes them to electron-builder, which signs and notarizes when credentials are available. Test a signed build on a clean Mac before describing a release as signed/notarized. A paid Apple Developer membership and a valid Developer ID certificate are external requirements; the repository cannot create them.
+The workflow passes them to electron-builder, which signs and notarizes when credentials are available. Missing secrets are unset before packaging, so an unsigned build never attempts to read an empty certificate path. Test a signed build on a clean Mac before describing a release as signed/notarized. A paid Apple Developer membership and a valid Developer ID certificate are external requirements; the repository cannot create them.
 
 GitHub's built-in `GITHUB_TOKEN` publishes releases. No personal access token is embedded in the app. The app reads public GitHub release metadata and opens only this repository's release URLs.
 

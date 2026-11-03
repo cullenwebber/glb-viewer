@@ -155,6 +155,17 @@ try {
   await page.locator("#wireframe").click();
   await page.locator("#view-mode").filter({ hasText: "Wireframe" }).waitFor();
   await page.locator("#wireframe").click();
+  await page.locator("#normal-overlay").selectOption("vertex");
+  await page.locator("#normal-length").fill("3");
+  await page.locator("#normals-selected").click();
+  await page.locator("#bone-overlay").click();
+  await page.locator("#overlay-in-front").click();
+  await page.screenshot({
+    path: path.join(tmpdir(), "glb-normal-overlays.png"),
+  });
+  await page.locator("#normal-overlay").selectOption("face");
+  await page.locator("#normal-overlay").selectOption("off");
+  await page.locator("#bone-overlay").click();
   await page.locator("#grid").click();
   await page.locator("#rotate").click();
   await page.locator("#rotate").click();

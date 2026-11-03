@@ -11,7 +11,7 @@
     "build": "node scripts/copy-decoders.mjs && tsc --noEmit && vite build",
     "package:mac": "npm run build && electron-builder --mac --dir",
     "dist:mac": "npm run build && electron-builder --mac dmg",
-    "test": "npm run build && node scripts/optimizer-test.mjs && node scripts/check-fixes-test.mjs && node scripts/pipeline-test.mjs && node scripts/recipe-test.mjs && node scripts/smoke-test.mjs && node scripts/workbench-test.mjs && node scripts/pipeline-ui-test.mjs",
+    "test": "npm run build && node scripts/optimizer-test.mjs && node scripts/inspection-test.mjs && node scripts/check-fixes-test.mjs && node scripts/pipeline-test.mjs && node scripts/recipe-test.mjs && node scripts/smoke-test.mjs && node scripts/workbench-test.mjs && node scripts/pipeline-ui-test.mjs",
     "format": "prettier --write src electron scripts index.html vite.config.ts tsconfig.json package.json components.json README.md --ignore-unknown"
   },
   "build": {

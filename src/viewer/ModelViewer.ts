@@ -1,3 +1,4 @@
+import { InspectionOverlays } from "./inspection-overlays";
 import * as THREE from "three";
 import { geometryBytes, textureMemory, type MeshMetric } from "./performance";
 import { ObjectSelection } from "./selection";
@@ -21,6 +22,7 @@ export class ModelViewer {
   readonly renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
   private selection = new ObjectSelection(this.scene);
+  private overlays = new InspectionOverlays();
   private modelCalls = 0;
   private meshCalls = new Map<string, number>();
   private materialsState = new Map<
@@ -74,7 +76,7 @@ export class ModelViewer {
     room.dispose();
     this.scene.environment = this.environment;
     this.scene.background = new THREE.Color(this.display.background);
-    this.scene.add(this.ambient, this.key, this.grid);
+    this.scene.add(this.ambient, this.key, this.grid, this.overlays.group);
     this.key.position.set(3, 5, 4);
     this.key.visible = false;
     this.ktx = new KTX2Loader()
@@ -126,6 +128,8 @@ export class ModelViewer {
       }
       this.controls.update();
       this.selection.update();
+      if (this.display.normals !== "off" || this.display.bones)
+        this.overlays.update(this.selection.object);
       this.modelCalls = 0;
       this.meshCalls.clear();
       const renderStart = performance.now();
@@ -227,6 +231,7 @@ export class ModelViewer {
     keepCamera = false,
   ) {
     this.selection.clear();
+    this.overlays.clear();
     this.isolatedVisibility.clear();
     this.materialsState.clear();
     if (this.mixer && this.model) {
@@ -524,6 +529,7 @@ export class ModelViewer {
       }
     });
     if (selected) this.selection.select(selected);
+    if (this.model) this.overlays.configure(this.model, settings);
   }
   selectAnimation(index: number) {
     this.mixer?.stopAllAction();
@@ -590,6 +596,7 @@ export class ModelViewer {
   }
   dispose() {
     this.disposed = true;
+    this.overlays.dispose();
     this.version++;
     this.renderer.setAnimationLoop(null);
     this.selection.clear();

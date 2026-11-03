@@ -23,6 +23,7 @@ For development with hot reload, run `npm run desktop:dev`. `npm run dev` starts
 - Inspect the scene hierarchy, triangle and vertex counts, meshes, materials, textures, and dimensions. Dimensions use glTF’s meter convention; animated bounds reflect the pose at load time. Counts describe the loaded scene, rather than a performance budget or glTF validation report.
 - Use the animation picker, play/pause button, scrubber, and playback speed controls. **Space** toggles playback. Clips loop.
 - Adjust wireframe, grid, background, studio/ambient/directional lighting, exposure, and auto rotation.
+- In **Geometry inspection**, show blue vertex normals or amber face normals, adjust their length relative to the model, and filter them to a selected object. Up to 5,000 normals are sampled on dense assets. Vertex normals follow skinning and morph targets; face normals follow the deformed triangles. Show bone connections during animation and scrubbing, with an optional in-front mode for both overlays. These helpers affect only the viewport and its draw-call total; they are excluded from the asset, model draw calls, and exports.
 - Save a PNG of the viewport or copy a Three.js loader snippet. Move your model and any external resources into your Three.js project’s public directory; copy the bundled decoders into that project too.
 
 The initial knot sculpture is a procedural demo. Opening a file replaces it. Draco, Meshopt, and KTX2 compression are supported. Other format extensions depend on Three.js GLTFLoader support.

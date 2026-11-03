@@ -1,5 +1,6 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ModelDetails } from "./ModelDetails";
+import { InspectionControls } from "./InspectionControls";
 import { DisplayControls } from "./DisplayControls";
 import { LightingControls } from "./LightingControls";
 import { ThreeJsSnippet } from "./ThreeJsSnippet";
@@ -14,6 +15,10 @@ export function ModelInspector({ viewer }: { viewer: ViewerController }) {
         <div className="inspector-sections">
           <ModelDetails state={viewer.state} />
           <DisplayControls
+            display={viewer.display}
+            onChange={viewer.updateDisplay}
+          />
+          <InspectionControls
             display={viewer.display}
             onChange={viewer.updateDisplay}
           />

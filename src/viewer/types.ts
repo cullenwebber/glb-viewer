@@ -44,6 +44,11 @@ export type ViewerState = {
   isolatedId: string | null;
 };
 export type DisplaySettings = {
+  normals: "off" | "vertex" | "face";
+  normalLength: number;
+  normalsSelectedOnly: boolean;
+  bones: boolean;
+  overlayInFront: boolean;
   grid: boolean;
   wireframe: boolean;
   rotate: boolean;
@@ -56,6 +61,11 @@ export type DisplaySettings = {
   pixelRatio: number;
 };
 export const defaultDisplay: DisplaySettings = {
+  normals: "off",
+  normalLength: 2,
+  normalsSelectedOnly: false,
+  bones: false,
+  overlayInFront: true,
   grid: true,
   wireframe: false,
   rotate: false,

@@ -33,6 +33,12 @@ async function launch() {
   });
   const page = await app.firstWindow();
   page.setDefaultTimeout(20000);
+  // macOS may constrain the initial BrowserWindow to the hosted runner's screen.
+  // Use a known workspace width for the large-drag and persistence assertions.
+  await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].setSize(1440, 960),
+  );
+  await page.waitForFunction(() => innerWidth === 1440);
   await page.locator("#triangles").filter({ hasText: "12,800" }).waitFor();
   return page;
 }

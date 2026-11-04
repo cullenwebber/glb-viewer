@@ -8,10 +8,11 @@
     "dev": "vite --host 127.0.0.1",
     "desktop": "npm run package:mac && node scripts/start-electron.mjs --packaged",
     "desktop:dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && npm run package:mac && node scripts/start-electron.mjs --packaged --dev\"",
-    "build": "node scripts/copy-decoders.mjs && tsc --noEmit && vite build",
+    "build": "node scripts/copy-decoders.mjs && tsc --noEmit && vite build && node scripts/package-blender.mjs",
     "package:mac": "npm run build && electron-builder --mac --dir",
     "dist:mac": "npm run build && electron-builder --mac dmg zip",
-    "test": "npm run build && node scripts/optimizer-test.mjs && node scripts/inspection-test.mjs && node scripts/check-fixes-test.mjs && node scripts/pipeline-test.mjs && node scripts/recipe-test.mjs && node scripts/studio-test.mjs && node scripts/smoke-test.mjs && node scripts/workbench-test.mjs && node scripts/pipeline-ui-test.mjs && node scripts/studio-ui-test.mjs && node scripts/navigation-test.mjs && node scripts/resize-test.mjs && node scripts/branding-test.mjs",
+    "test": "npm run build && node scripts/material-graph-test.mjs && node scripts/material-editor-test.mjs && node scripts/optimizer-test.mjs && node scripts/inspection-test.mjs && node scripts/check-fixes-test.mjs && node scripts/pipeline-test.mjs && node scripts/recipe-test.mjs && node scripts/studio-test.mjs && node scripts/smoke-test.mjs && node scripts/material-editor-ui-test.mjs && node scripts/workbench-test.mjs && node scripts/pipeline-ui-test.mjs && node scripts/studio-ui-test.mjs && node scripts/navigation-test.mjs && node scripts/resize-test.mjs && node scripts/branding-test.mjs",
+    "test:blender": "node scripts/blender-bridge-test.mjs",
     "format": "prettier --write src electron scripts index.html vite.config.ts tsconfig.json package.json components.json README.md --ignore-unknown"
   },
   "build": {

@@ -30,6 +30,7 @@ import { encodeToKTX2 } from "ktx2-encoder";
 import { read as readKTX } from "ktx-parse";
 import { realpath, readFile } from "node:fs/promises";
 import path from "node:path";
+import { BRIDGE_KEY } from "./pipeline/material-graph.mjs";
 
 const imageDecoder = async (buffer) => {
   const { data, info } = await sharp(buffer)
@@ -269,6 +270,9 @@ export class Optimizer {
       sourceTextures.map((texture, index) => [texture, `t${index}`]),
     );
     const changes = new Map();
+    const seenTextures = new Set();
+    const removedTextures = new Set();
+    const textureWarnings = [];
     assert(
       Array.isArray(plan.textures) &&
         plan.textures.length <= sourceTextures.length,
@@ -277,8 +281,13 @@ export class Optimizer {
     for (const settings of plan.textures) {
       const texture = sourceTextures[settings.id];
       assert(
-        texture && !changes.has(texture),
+        texture && !seenTextures.has(texture),
         "Unknown or duplicated texture setting.",
+      );
+      seenTextures.add(texture);
+      assert(
+        settings.remove === undefined || typeof settings.remove === "boolean",
+        "Invalid texture removal setting.",
       );
       assert(
         ["keep", "png", "jpeg", "webp", "etc1s", "uastc"].includes(
@@ -292,7 +301,9 @@ export class Optimizer {
           settings.maxSize <= 8192,
         "Maximum texture size must be between 0 and 8192.",
       );
-      if (settings.format !== "keep" || settings.maxSize) {
+      if (settings.remove) {
+        removedTextures.add(texture);
+      } else if (settings.format !== "keep" || settings.maxSize) {
         assert(
           texture.getMimeType() !== "image/ktx2",
           "Existing KTX2 images can be inspected and preserved. Reimport the source PNG/JPEG to resize or re-encode.",
@@ -334,6 +345,10 @@ export class Optimizer {
           continue;
         }
         const source = sourceTextures[selection.texture];
+        assert(
+          !removedTextures.has(source),
+          "A texture marked for removal is used by a packing recipe. Remove it from the recipe or keep the texture before optimizing.",
+        );
         assert(
           source && source.getMimeType() !== "image/ktx2",
           "Packing requires a PNG, JPEG, WebP or AVIF source.",
@@ -440,6 +455,33 @@ export class Optimizer {
         changes.delete(texture);
         texture.dispose();
       }
+    }
+    for (const texture of removedTextures) {
+      if (texture.isDisposed()) continue;
+      const visited = new Set();
+      const clearBridge = (property) => {
+        if (visited.has(property)) return;
+        visited.add(property);
+        if (property.propertyType === PropertyType.MATERIAL) {
+          const extras = { ...property.getExtras() };
+          if (Object.hasOwn(extras, BRIDGE_KEY)) {
+            delete extras[BRIDGE_KEY];
+            property.setExtras(extras);
+            textureWarnings.push(
+              `Removed the embedded Blender shader graph from ${property.getName() || "a material"} so it cannot restore a removed texture. The remaining glTF material is preserved.`,
+            );
+          }
+          return;
+        }
+        for (const parent of property.listParents())
+          if (parent.propertyType !== PropertyType.ROOT) clearBridge(parent);
+      };
+      clearBridge(texture);
+      progress(
+        `Removing ${texture.getName() || "texture"} from the optimized model…`,
+      );
+      changes.delete(texture);
+      texture.dispose();
     }
     for (const [texture, settings] of changes) {
       progress(
@@ -671,7 +713,7 @@ export class Optimizer {
       comparisons,
       textures: after,
       geometry: plan.geometry,
-      warnings: geometryResult.warnings,
+      warnings: [...textureWarnings, ...geometryResult.warnings],
       beforeMeshes: meshRows(this.original),
       afterMeshes: meshRows(doc),
       lods: this.lods.map(({ bytes, ...lod }) => ({

@@ -25,6 +25,23 @@ export function ExportPanel({ workbench: w }: { workbench: WorkbenchState }) {
       </div>
       <div className="settings-grid">
         <section className="settings-section">
+          <h3>Blender bridge</h3>
+          <p>
+            Install the add-on in Blender 4.2 or newer. Choose an output folder,
+            send your model, then open model.glb here and enable Watch exports.
+            Supported material graphs preview as TSL; unsupported graphs retain
+            glTF fallback materials with diagnostics under Surface inspection.
+            Include scene cameras and Point/Spot/Sun lights, then use the
+            viewport camera selector and Camera/light helpers to inspect them.
+          </p>
+          <Button asChild variant="outline" className="mt-4">
+            <a href="./glb-viewer-bridge.zip" download>
+              <Download />
+              Download Blender add-on
+            </a>
+          </Button>
+        </section>
+        <section className="settings-section">
           <h3>Optimized GLB</h3>
           <p>
             One self-contained file, preserving original source files. Use the
@@ -46,8 +63,8 @@ export function ExportPanel({ workbench: w }: { workbench: WorkbenchState }) {
           <p>
             Creates a new folder with model.glb, optional LOD models, bundled
             Draco and Basis decoders, a vanilla TypeScript loader, a React Three
-            Fiber component, typed animation and object lookups, the measured
-            report, and integration instructions.
+            Fiber component, a TSL material translator, typed animation and
+            object lookups, the measured report, and integration instructions.
           </p>
           <Button
             id="export-bundle"

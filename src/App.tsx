@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { MaterialsWorkspace } from "./components/materials/MaterialsWorkspace";
 import { toast } from "sonner";
 import { PerformancePanel } from "@/components/performance/PerformancePanel";
 import { WorkspaceSidebar } from "@/components/layout/WorkspaceSidebar";
@@ -127,10 +128,23 @@ export function App() {
       />
       <div className="application-shell">
         <WorkspaceSidebar workbench={workbench} navigation={navigation} />
-        <div className="asset-stage">
+        <div
+          className="asset-stage"
+          style={
+            workbench.open && workbench.tab === "materials"
+              ? { display: "flex", flexDirection: "column" }
+              : undefined
+          }
+        >
           <div
             className={`app-workspace ${workbench.tab === "performance" ? "performance-mode" : ""}`}
-            style={workbench.open ? { display: "none" } : undefined}
+            style={
+              workbench.open
+                ? workbench.tab === "materials"
+                  ? { flex: "0 0 42%", height: "42%", minHeight: 200 }
+                  : { display: "none" }
+                : undefined
+            }
           >
             <ResizableWorkspace
               id="model-panels"
@@ -156,6 +170,10 @@ export function App() {
               }
             />
           </div>
+          <MaterialsWorkspace
+            viewer={viewer}
+            active={workbench.open && workbench.tab === "materials"}
+          />
           <WorkbenchWorkspace
             workbench={workbench}
             viewer={viewer}

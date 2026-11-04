@@ -4,6 +4,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
+await renderer.init();
 // Copy Three.js decoders into your public/decoders directory.
 const loader = new GLTFLoader()
   .setDRACOLoader(new DRACOLoader().setDecoderPath('/decoders/draco/'))

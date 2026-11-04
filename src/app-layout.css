@@ -517,6 +517,42 @@ html {
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
 }
+.texture-status-summary {
+  padding: 0 12px 8px;
+  font-size: 10px;
+  color: var(--muted-foreground);
+}
+.texture-status-filter {
+  padding: 0 12px 10px;
+}
+.texture-list-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.texture-state {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px !important;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.texture-state.is-configured {
+  color: var(--success) !important;
+}
+.texture-state.is-removed {
+  color: var(--destructive) !important;
+}
+.texture-state.is-unchanged,
+.texture-state.is-input {
+  color: var(--muted-foreground);
+}
+.texture-list-item[data-texture-status="removed"] .texture-thumb {
+  opacity: 0.45;
+}
 .texture-thumb {
   width: 32px;
   height: 32px;

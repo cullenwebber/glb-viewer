@@ -26,6 +26,7 @@ export function TextureInspector({
         left={
           <TextureList
             textures={w.analysis?.textures ?? []}
+            settings={w.settings}
             selected={w.selected}
             onSelect={w.setSelected}
             onImport={w.importTextures}
@@ -66,6 +67,12 @@ export function TextureInspector({
               <TextureOutputSettings
                 texture={row}
                 setting={setting}
+                busy={w.phase !== "idle"}
+                packingUses={w.packs
+                  .filter((pack) =>
+                    pack.channels.some((channel) => channel.texture === row.id),
+                  )
+                  .map((pack) => pack.name)}
                 onChange={(update) => w.changeTexture(row.id, update)}
               />
             )}

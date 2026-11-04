@@ -1,5 +1,5 @@
 import { openWorkspace } from "./ui-navigation.mjs";
-import { _electron as electron } from "@playwright/test";
+import { _electron as electron, expect } from "@playwright/test";
 import assert from "node:assert/strict";
 import { mkdtemp, writeFile, readFile, rm } from "node:fs/promises";
 import path from "node:path";
@@ -10,6 +10,7 @@ const directory = await mkdtemp(path.join(tmpdir(), "glb-workbench-"));
 let app;
 try {
   const { file, io } = await fixture(directory);
+  const originalBytes = await readFile(file);
   const env = {
     ...process.env,
     GLB_VIEWER_USER_DATA: path.join(directory, "user-data"),
@@ -42,6 +43,9 @@ try {
   await page.screenshot({
     path: path.join(tmpdir(), "glb-workbench-ready.png"),
   });
+  await expect(page.locator('[data-texture-status="unchanged"]')).toHaveCount(
+    4,
+  );
   await page.locator('[data-texture="0"]').click();
   await page.locator("#wb-image-loading").waitFor({ state: "hidden" });
   const stage = page.locator("#wb-image-stage");
@@ -86,6 +90,36 @@ try {
     .click();
   await page.locator('[data-texture="1"]').click();
   await page.locator("#wb-format").selectOption("uastc");
+  await expect(
+    page.getByRole("status", { name: "Texture configuration progress" }),
+  ).toHaveText("2 / 4 configured");
+  const statusFilter = page.getByRole("combobox", {
+    name: "Filter textures by status",
+  });
+  await statusFilter.selectOption("configured");
+  await expect(page.locator("[data-texture]")).toHaveCount(2);
+  await page.locator("#wb-reset-texture").click();
+  await expect(page.locator('[data-texture="1"]')).toHaveCount(0);
+  await statusFilter.selectOption("unchanged");
+  await expect(page.locator("[data-texture]")).toHaveCount(3);
+  await page.locator('[data-texture="1"]').click();
+  await page.locator("#wb-format").selectOption("uastc");
+  await statusFilter.selectOption("all");
+  await page.locator("#wb-remove-texture").click();
+  await expect(page.locator('[data-texture="1"]')).toHaveAttribute(
+    "data-texture-status",
+    "removed",
+  );
+  await expect(page.locator("#wb-format")).toBeDisabled();
+  await statusFilter.selectOption("removed");
+  await expect(page.locator("[data-texture]")).toHaveCount(1);
+  await page.locator("#wb-remove-texture").click();
+  await statusFilter.selectOption("all");
+  await expect(page.locator("#wb-format")).toHaveValue("uastc");
+  await expect(page.locator('[data-texture="1"]')).toHaveAttribute(
+    "data-texture-status",
+    "configured",
+  );
   await page.locator("#wb-geometry").selectOption("meshopt");
   await page.locator("#geometry-settings").click();
   await page.locator("#meshopt-level").selectOption("high");
@@ -93,6 +127,12 @@ try {
   await openWorkspace(page, "packing");
   await page.locator("#wb-add-pack").click();
   await page.locator('[data-field="size"]').selectOption("256");
+  await openWorkspace(page, "textures");
+  await page.locator('[data-texture="2"]').click();
+  await expect(page.locator("#wb-remove-texture")).toBeDisabled();
+  await expect(
+    page.getByText(/Remove it from those packing recipes first/),
+  ).toBeVisible();
   await page.locator("#wb-run").click();
   await page
     .locator("#wb-notice")
@@ -215,6 +255,44 @@ try {
     .locator("#filename")
     .filter({ hasText: "fixture-optimized.glb" })
     .waitFor();
+  await openWorkspace(page, "textures");
+  await page.locator("#wb-original").click();
+  await page.locator("#filename").filter({ hasText: "fixture.glb" }).waitFor();
+  await openWorkspace(page, "textures");
+  await page.locator('[data-texture="1"]').click();
+  await page.locator("#wb-remove-texture").click();
+  await page.locator("#wb-run").click();
+  await page
+    .locator("#wb-notice")
+    .filter({ hasText: "Optimization complete" })
+    .waitFor({ timeout: 60000 });
+  await page.locator("#wb-export").click();
+  await page.locator("#wb-notice").filter({ hasText: "Exported" }).waitFor();
+  const withoutNormal = await io.readBinary(
+    new Uint8Array(await readFile(destination)),
+  );
+  assert.equal(withoutNormal.getRoot().listTextures().length, 2);
+  assert.equal(
+    withoutNormal.getRoot().listMaterials()[0].getNormalTexture(),
+    null,
+  );
+  assert.deepEqual(await readFile(file), originalBytes);
+  await openWorkspace(page, "textures");
+  await page.locator('[data-texture="1"]').click();
+  await page.locator("#wb-remove-texture").click();
+  await expect(page.locator("#wb-format")).toHaveValue("uastc");
+  await page.locator("#wb-run").click();
+  await page
+    .locator("#wb-notice")
+    .filter({ hasText: "Optimization complete" })
+    .waitFor({ timeout: 60000 });
+  await page.locator("#wb-export").click();
+  await page.locator("#wb-notice").filter({ hasText: "Exported" }).waitFor();
+  const restored = await io.readBinary(
+    new Uint8Array(await readFile(destination)),
+  );
+  assert.equal(restored.getRoot().listTextures().length, 3);
+  assert(restored.getRoot().listMaterials()[0].getNormalTexture());
   assert.deepEqual(errors, []);
   console.log(
     "PASS: Electron worker analysis, RGBA debugging, per-texture settings, meshopt + KTX2 + ORM pipeline, report, native export, Three.js optimized preview, original switch, imported packing inputs.",

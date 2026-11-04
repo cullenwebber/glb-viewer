@@ -67,6 +67,7 @@ export type TextureSetting = {
   maxSize: number;
   format: string;
   compression?: TextureCompression;
+  remove?: boolean;
 };
 export type ChannelSource = {
   texture: number | null;

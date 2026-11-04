@@ -32,7 +32,7 @@ export function WorkbenchWorkspace({
   viewer: ViewerController;
   onFocus: (index: number) => void;
 }) {
-  if (!w.open) return null;
+  if (!w.open || w.tab === "materials") return null;
   const busy = w.phase !== "idle",
     hasOutput = !!w.report && !w.dirty && !busy;
   return (

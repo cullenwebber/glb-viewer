@@ -4,3 +4,4 @@ release/
 public/decoders/
 .DS_Store
 assets/AppIcon.iconset/
+blender/**/__pycache__/

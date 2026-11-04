@@ -1,5 +1,5 @@
 import { openWorkspace } from "./ui-navigation.mjs";
-import { _electron as electron } from "@playwright/test";
+import { _electron as electron, expect } from "@playwright/test";
 import assert from "node:assert/strict";
 import {
   mkdtemp,
@@ -158,6 +158,12 @@ try {
   assert.equal(await page.locator("#wb-format").inputValue(), "webp");
   assert.equal(
     await page
+      .locator('[data-texture="0"]')
+      .getAttribute("data-texture-status"),
+    "configured",
+  );
+  assert.equal(
+    await page
       .getByRole("spinbutton", { name: "Image quality", exact: true })
       .inputValue(),
     "82",
@@ -168,6 +174,22 @@ try {
   await page.screenshot({
     path: path.join(tmpdir(), "glb-geometry-workflow.png"),
   });
+  await openWorkspace(page, "textures");
+  await page.locator('[data-texture="1"]').click();
+  await page.locator("#wb-remove-texture").click();
+  await expect
+    .poll(async () => {
+      const library = JSON.parse(
+        await readFile(
+          path.join(directory, "user-data", "asset-library.json"),
+          "utf8",
+        ),
+      );
+      return Object.values(library.recipes).some((recipe) =>
+        recipe.textureRules.some((rule) => rule.settings.remove),
+      );
+    })
+    .toBe(true);
   // Persistence across app restarts: library, not just in-memory component state.
   await app.close();
   app = undefined;
@@ -177,6 +199,19 @@ try {
     file,
   );
   await page.locator("#filename").filter({ hasText: "fixture.glb" }).waitFor();
+  await openWorkspace(page, "textures");
+  await expect(page.locator('[data-texture="0"]')).toHaveAttribute(
+    "data-texture-status",
+    "configured",
+  );
+  await expect(page.locator('[data-texture="1"]')).toHaveAttribute(
+    "data-texture-status",
+    "removed",
+  );
+  await page.locator('[data-texture="1"]').click();
+  await expect(page.locator("#wb-remove-texture")).toHaveText(
+    "Keep this texture",
+  );
   await openWorkspace(page, "presets");
   await page
     .locator("[data-preset]")
@@ -190,6 +225,16 @@ try {
   await openWorkspace(page, "textures");
   await page.locator('[data-texture="0"]').click();
   assert.equal(await page.locator("#wb-format").inputValue(), "webp");
+  assert.equal(
+    await page
+      .locator('[data-texture="0"]')
+      .getAttribute("data-texture-status"),
+    "configured",
+  );
+  await expect(page.locator('[data-texture="1"]')).toHaveAttribute(
+    "data-texture-status",
+    "unchanged",
+  );
   assert.deepEqual(errors, []);
   console.log(
     "PASS: Checks and Performance, viewport experiments/isolation, geometry/LOD settings, persistent presets, complete native export bundle, Blender atomic reload and recipe restoration across restarts.",

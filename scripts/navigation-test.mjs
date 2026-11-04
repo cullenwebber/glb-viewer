@@ -30,7 +30,7 @@ try {
   page.on("pageerror", (error) => errors.push(error.message));
   await page.locator("#triangles").filter({ hasText: "12,800" }).waitFor();
   assert.equal(await page.locator(".app-titlebar [data-tab]").count(), 0);
-  assert.equal(await page.locator(".workspace-sidebar [data-tab]").count(), 13);
+  assert.equal(await page.locator(".workspace-sidebar [data-tab]").count(), 14);
   assert.equal(
     await page.locator(".workspace-sidebar [data-section]").count(),
     4,
@@ -43,7 +43,7 @@ try {
   await page.locator("#title-file").filter({ hasText: name }).waitFor();
   await page.locator("#wb-count").filter({ hasText: "4" }).waitFor();
   const groups = {
-    inspect: ["model", "textures", "checks", "performance"],
+    inspect: ["model", "textures", "materials", "checks", "performance"],
     optimize: ["geometry", "packing", "presets"],
     review: ["compare", "report", "history", "export"],
     tools: ["batch", "budgets"],
@@ -63,7 +63,7 @@ try {
       );
       assert.equal(
         await page.locator(".workspace-sidebar [data-tab]").count(),
-        13,
+        14,
       );
       if (["textures", "geometry", "packing"].includes(tab))
         assert(await page.locator(".workbench-toolbar").isVisible());
@@ -88,7 +88,7 @@ try {
   await page.locator("#toggle-navigation").click();
   const compact = await page.locator(".workspace-sidebar").boundingBox();
   assert(compact.width < expanded.width - 80);
-  assert.equal(await page.locator(".workspace-sidebar [data-tab]").count(), 13);
+  assert.equal(await page.locator(".workspace-sidebar [data-tab]").count(), 14);
   await page.reload();
   await page.locator("#triangles").filter({ hasText: "12,800" }).waitFor();
   assert(
@@ -148,7 +148,7 @@ try {
   });
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: 13 permanently available tools in a labelled sidebar, page navigation, keyboard access, persisted compact mode, app menus, and 960px layout.",
+    "PASS: 14 permanently available tools in a labelled sidebar, page navigation, keyboard access, persisted compact mode, app menus, and 960px layout.",
   );
 } finally {
   await app?.close();

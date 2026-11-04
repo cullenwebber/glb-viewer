@@ -1,4 +1,6 @@
 import type { MeshMetric } from "./performance";
+import type { BridgeMaterialReport } from "../../electron/pipeline/material-runtime.mjs";
+import type { MaterialGraph } from "../lib/material-editor";
 export type SceneNode = {
   id: string;
   name: string;
@@ -8,6 +10,14 @@ export type SceneNode = {
   sourceIndex: number | null;
 };
 export type ViewerState = {
+  sceneCameras: { id: string; name: string }[];
+  sceneLights: { id: string; name: string; type: string }[];
+  sceneCameraId: string;
+  sceneLightsEnabled: boolean;
+  sceneHelpers: boolean;
+  materialSlots: { key: string; name: string; graph: MaterialGraph }[];
+  rendererBackend: string;
+  bridgeMaterials: BridgeMaterialReport[];
   name: string;
   size: number;
   demo: boolean;
@@ -100,6 +110,14 @@ export const defaultDisplay: DisplaySettings = {
   pixelRatio: 1.5,
 };
 export const initialViewerState: ViewerState = {
+  sceneCameras: [],
+  sceneLights: [],
+  sceneCameraId: "",
+  sceneLightsEnabled: true,
+  sceneHelpers: false,
+  materialSlots: [],
+  rendererBackend: "Initializing GPU…",
+  bridgeMaterials: [],
   name: "Studio sample",
   size: 0,
   demo: true,

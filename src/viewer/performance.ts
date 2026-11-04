@@ -1,4 +1,22 @@
 import * as THREE from "three";
+import type { Node } from "three/webgpu";
+
+export function materialTextures(material: THREE.Material) {
+  const textures = new Set<THREE.Texture>();
+  const visited = new Set<Node>();
+  const inspect = (node: Node) => {
+    if (visited.has(node)) return;
+    visited.add(node);
+    const texture = (node as unknown as { value?: unknown }).value;
+    if (texture instanceof THREE.Texture) textures.add(texture);
+    for (const child of node.getChildren()) inspect(child);
+  };
+  for (const value of Object.values(material)) {
+    if (value instanceof THREE.Texture) textures.add(value);
+    else if ((value as Node | null)?.isNode) inspect(value as Node);
+  }
+  return textures;
+}
 export type MeshMetric = {
   id: string;
   name: string;

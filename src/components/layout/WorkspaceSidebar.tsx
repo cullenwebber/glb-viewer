@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Box,
   ImageIcon,
+  Network,
   ShieldCheck,
   Activity,
   Shapes,
@@ -30,6 +31,7 @@ import type { WorkspaceNavigator } from "@/hooks/use-workspace-navigation";
 const icons = {
   model: Box,
   textures: ImageIcon,
+  materials: Network,
   checks: ShieldCheck,
   performance: Activity,
   geometry: Shapes,

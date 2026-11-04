@@ -1,12 +1,10 @@
-## GLB Viewer 1.2.1
+## GLB Viewer 1.3.0
 
-- Drag the scene tree and inspector dividers to give long names and properties more room.
-- Resize the texture library and texture properties independently.
-- Panel widths persist across tab changes and app restarts.
-- Use arrow keys on a focused divider, or double-click a divider to reset widths.
-- Keeps a minimum width for the viewport and fixes scene-tree text layout inside scroll areas.
-- Applies GLB Viewer branding to the native app menu, About panel, Dock icon, and normal launch commands.
-- Replaces top tabs with a labelled tool sidebar. All tools remain available; compact mode is optional and remembered.
+- Adds a **Materials** workspace with a procedural node editor, live preview, and TSL export for Three.js.
+- Adds an **Input → Time** node with seconds, delta, and frame outputs, plus speed and offset controls, for animated materials.
+- Adds the **GLB Viewer Bridge** add-on for Blender 4.2 or newer. Send models from Blender and reload them automatically with **Watch exports**.
+- Brings Blender cameras and lights into the viewer, with camera selection and helpers.
+- Translates supported Blender material nodes into editable graphs. See `docs/blender-bridge.md` for the supported list.
 
 Choose the **arm64** DMG for Apple Silicon or **x64** for Intel. Copy GLB Viewer to Applications.
 

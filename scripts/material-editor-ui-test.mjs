@@ -47,6 +47,10 @@ try {
   const canvas = page.getByRole("application", {
     name: "Material node editor",
   });
+  await expect(page.locator(".material-graph-layer")).not.toHaveAttribute(
+    "style",
+    /translate\(40px, 180px\) scale\(0\.75\)/,
+  );
   const viewportTransform = await page
     .locator(".material-graph-layer")
     .getAttribute("style");
@@ -537,14 +541,17 @@ try {
           ),
       );
       if (["bump", "normalMap"].includes(type)) {
-        const screenshot = await page.locator("#viewport canvas").screenshot();
-        if (operation === "disabled") normalPreviews[type] = screenshot;
+        const preview = page.locator("#viewport canvas");
+        if (operation === "disabled")
+          normalPreviews[type] = await preview.screenshot();
         else
-          assert.notDeepEqual(
-            screenshot,
-            normalPreviews[type],
-            `${type} changes rendered surface lighting`,
-          );
+          await expect
+            .poll(
+              async () =>
+                (await preview.screenshot()).equals(normalPreviews[type]),
+              { message: `${type} changes rendered surface lighting` },
+            )
+            .toBe(false);
       }
     }
   }

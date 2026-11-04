@@ -2,6 +2,8 @@
 
 A local-first Mac app for preparing Blender assets for Three.js.
 
+![GLB Viewer inspecting an animated model](docs/screenshots/model.png)
+
 - [Download the latest release](https://github.com/cullenwebber/glb-viewer/releases/latest) — Apple Silicon and Intel.
 - Open the DMG and drag **GLB Viewer** into Applications.
 - [User guide](docs/user-guide.md) · [Release setup](docs/releasing.md) · [Builds](https://github.com/cullenwebber/glb-viewer/actions)
@@ -26,6 +28,34 @@ A local-first Mac app for preparing Blender assets for Three.js.
 - Three.js bundles with decoders, typed lookups, and a React Three Fiber component.
 - Actual before/after file sizes, draw calls, load timings, and memory estimates.
 - Models stay local; source files are preserved.
+
+## Screenshots
+
+### Build materials with live nodes
+
+Wire procedural nodes, preview them on the model, and export them as TSL.
+
+![Materials node editor driving an animated noise material](docs/screenshots/materials.png)
+
+### Compare before you export
+
+Check the optimized model next to the original with linked cameras and animation.
+
+![Original and optimized models side by side](docs/screenshots/compare.png)
+
+### See what each change saves
+
+Measure the actual output size, image by image.
+
+![Size report for an optimization run](docs/screenshots/report.png)
+
+### Inspect textures and UVs
+
+| Textures | UV checker |
+| --- | --- |
+| ![Texture library and channel viewer](docs/screenshots/textures.png) | ![UV checker view of the model](docs/screenshots/inspection.png) |
+
+Demo model: [Littlest Tokyo](https://www.artstation.com/artwork/1AGwX) by Glen Fox, CC Attribution, from the [Three.js examples](https://threejs.org/examples/#webgl_animation_keyframes).
 
 ## Blender and material nodes
 

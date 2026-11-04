@@ -1,6 +1,10 @@
-## GLB Viewer 1.4.0
+## GLB Viewer 1.5.0
 
-- Opens with the animated Littlest Tokyo model by Glen Fox (CC Attribution), so you can try texture compression, optimization, and comparison straight away.
+- Click an object to inspect its assigned materials, jump into its material graph, and identify shared materials.
+- Imported material graphs now show the model's actual image textures, including KTX2 previews, texture names, dimensions, UV channels, and color spaces.
+- Inspect packed texture channels with Separate Color nodes and preserve material factors, normal-map scales, sampling, and supported physical-material maps.
+- Source texture references avoid duplicating image data; exported TSL supports a texture resolver for the original model's textures.
+- Fix the temporary torus-knot flash on startup: the loading screen now transitions directly to Littlest Tokyo, including after reload.
 
 Choose the **arm64** DMG for Apple Silicon or **x64** for Intel. Copy GLB Viewer to Applications.
 

@@ -133,9 +133,13 @@ export function Viewport({
           <span>Orbit</span> Drag <span>Zoom</span> Scroll <span>Pan</span>{" "}
           Right-drag
         </div>
-        {state.demo && (
+        {(state.demo || state.sample) && (
           <div className="sample-note">
-            <span>Sample model</span>
+            <span>
+              {state.sample
+                ? "Littlest Tokyo by Glen Fox, CC Attribution"
+                : "Sample model"}
+            </span>
             <Button id="sample-note" variant="link" size="sm" onClick={onOpen}>
               Open your own file
             </Button>

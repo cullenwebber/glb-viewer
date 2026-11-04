@@ -72,7 +72,7 @@ The node editor translates supported Blender nodes. It isn't full Cycles parity 
 - **Performance:** draw calls, load timings, and memory estimates
 - **Batch processing** for whole folders
 
-Demo model: [Littlest Tokyo](https://www.artstation.com/artwork/1AGwX) by Glen Fox, CC Attribution, from the [Three.js examples](https://threejs.org/examples/#webgl_animation_keyframes).
+The app opens with this demo model so you can try every tool straight away: [Littlest Tokyo](https://www.artstation.com/artwork/1AGwX) by Glen Fox, CC Attribution, from the [Three.js examples](https://threejs.org/examples/#webgl_animation_keyframes).
 
 ## Development
 

@@ -21,6 +21,7 @@ export type ViewerState = {
   name: string;
   size: number;
   demo: boolean;
+  sample: boolean;
   optimized: boolean;
   loading: boolean;
   error: string | null;
@@ -121,6 +122,7 @@ export const initialViewerState: ViewerState = {
   name: "Studio sample",
   size: 0,
   demo: true,
+  sample: false,
   optimized: false,
   loading: false,
   error: null,

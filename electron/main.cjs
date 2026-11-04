@@ -51,6 +51,12 @@ protocol.registerSchemesAsPrivileged([
 let window;
 let rendererReady = false;
 let pending = process.argv.find((arg) => /\.(glb|gltf)$/i.test(arg));
+let sampleOffered = !!process.env.GLB_VIEWER_SKIP_SAMPLE;
+const samplePath = path.join(
+  app.isPackaged ? process.resourcesPath : path.join(__dirname, "..", "assets"),
+  "samples",
+  "LittlestTokyo.glb",
+);
 const roots = new Map();
 const modelPaths = new Map();
 const importedBySource = new Map();
@@ -112,6 +118,7 @@ async function grant(file, reloaded = false) {
     size: stat.size,
     sourceKey: createHash("sha256").update(resolved).digest("hex").slice(0, 32),
     reloaded,
+    sample: resolved === (await fs.realpath(samplePath).catch(() => "")),
   };
 }
 async function deliver(file) {
@@ -560,7 +567,15 @@ app.whenReady().then(() => {
     if (pending) {
       const file = pending;
       pending = null;
+      sampleOffered = true;
       void deliver(file);
+    } else if (!sampleOffered) {
+      sampleOffered = true;
+      // The built-in knot stays on screen if the sample is unavailable.
+      void fs.access(samplePath).then(
+        () => deliver(samplePath),
+        () => {},
+      );
     }
   });
   window.webContents.on("did-start-loading", () => {

@@ -71,6 +71,7 @@ try {
   await writeFile(file, await io.writeBinary(doc));
   const env = {
     ...process.env,
+    GLB_VIEWER_SKIP_SAMPLE: "1",
     GLB_VIEWER_USER_DATA: path.join(directory, "user-data"),
   };
   delete env.ELECTRON_RUN_AS_NODE;

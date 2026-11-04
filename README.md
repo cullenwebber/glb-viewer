@@ -1,69 +1,78 @@
 # GLB Viewer
 
-A local-first Mac app for preparing Blender assets for Three.js.
+**Shrink, inspect, and prepare GLB models for Three.js.** A local-first Mac app that compresses textures to KTX2, optimizes geometry, and shows exactly what changed. Your models never leave your computer.
+
+[**Download for Mac**](https://github.com/cullenwebber/glb-viewer/releases/latest) · [User guide](docs/user-guide.md) · [Blender bridge](docs/blender-bridge.md)
 
 ![GLB Viewer inspecting an animated model](docs/screenshots/model.png)
 
-- [Download the latest release](https://github.com/cullenwebber/glb-viewer/releases/latest) — Apple Silicon and Intel.
-- Open the DMG and drag **GLB Viewer** into Applications.
-- [User guide](docs/user-guide.md) · [Release setup](docs/releasing.md) · [Builds](https://github.com/cullenwebber/glb-viewer/actions)
+## Install
 
-## Features
+1. Download the DMG from the [latest release](https://github.com/cullenwebber/glb-viewer/releases/latest): **arm64** for Apple Silicon or **x64** for Intel.
+2. Open it and drag **GLB Viewer** into Applications.
+3. Open the app. macOS will warn you the first time because builds aren't notarized by Apple yet.
+4. Go to **System Settings → Privacy & Security** and click **Open Anyway**.
 
-- Labelled tool navigation and draggable panel widths.
+If macOS still won't open it, run `xattr -cr "/Applications/GLB Viewer.app"` in Terminal.
 
-- GLB/glTF preview, scene selection, mesh isolation, and animation playback.
-- WebGPU rendering with Three.js's WebGL 2 fallback backend.
-- A Materials node workspace with live TSL previews, socket wiring, undo/redo, and graph/TypeScript exports.
-- A Blender add-on for atomic, watched exports with embedded material graphs.
-- Procedural noise nodes and physical glass/coat/sheen inputs, plus imported camera views and scene-light helpers.
-- Vertex/face normals, bones, bone weights, face orientation, and cost heatmaps.
-- Material solo views, UV checker, and UV layout inspection.
-- Texture pan/zoom, channel debugging, individual resizing, and channel packing.
-- Draco/Meshopt geometry compression and KTX2, WebP, PNG, or JPEG textures.
-- Per-mesh simplification, cleanup, instancing, and LOD exports.
-- glTF validation with actionable fixes and output rechecking.
-- Linked before/after comparison, saved run history, presets, and project budgets.
-- Folder batch processing and automatic Blender re-export watching.
-- Three.js bundles with decoders, typed lookups, and a React Three Fiber component.
-- Actual before/after file sizes, draw calls, load timings, and memory estimates.
-- Models stay local; source files are preserved.
+## Compress textures to KTX2
 
-## Screenshots
+Convert each image to GPU-ready KTX2, or use WebP, PNG, or JPEG where that suits it better.
 
-### Build materials with live nodes
+- **KTX2 with ETC1S or UASTC**, with quality, effort, and mipmap controls
+- **Per-texture settings**, including maximum resolution
+- **Channel viewer** with pan, zoom, and RGBA debugging
+- **Channel packing** for combined texture maps
 
-Wire procedural nodes, preview them on the model, and export them as TSL.
+![KTX2 settings for a texture](docs/screenshots/ktx2-settings.png)
 
-![Materials node editor driving an animated noise material](docs/screenshots/materials.png)
+> ETC1S encoding currently handles textures up to about 12 megapixels. Set a 4096 px texture to 2048 px before encoding.
 
-### Compare before you export
+## See exactly what you saved
 
-Check the optimized model next to the original with linked cameras and animation.
+Get measured before and after sizes for the whole file and for every image.
+
+- **Real output sizes**, not estimates
+- **Draco or Meshopt** geometry compression
+- **Project budgets** and saved run history
+
+![Size report showing a model reduced from 3.94 MB to 2.92 MB](docs/screenshots/report.png)
+
+## Compare before you export
+
+Check the optimized model beside the original, with cameras and animation linked.
+
+- **Mesh simplification** with per-mesh overrides and LOD exports
+- **Cleanup and instancing** to cut resources and draw calls
+- **glTF validation** with actionable fixes
+- **Three.js bundles** with decoders, typed lookups, and a React Three Fiber component
 
 ![Original and optimized models side by side](docs/screenshots/compare.png)
 
-### See what each change saves
+## Build materials with live nodes
 
-Measure the actual output size, image by image.
+Wire procedural nodes, preview them on your model, and export them as TSL.
 
-![Size report for an optimization run](docs/screenshots/report.png)
+- **Noise, mapping, math, ramp, and Time nodes**, plus physical glass, coat, and sheen inputs
+- **Live WebGPU preview**, with Three.js's WebGL 2 fallback
+- **Blender add-on** for watched exports with embedded material graphs, cameras, and lights
 
-### Inspect textures and UVs
+![Materials node editor driving an animated noise material](docs/screenshots/materials.png)
 
-| Textures | UV checker |
+The node editor translates supported Blender nodes. It isn't full Cycles parity or two-way sync. See [Blender bridge and node editor](docs/blender-bridge.md) for setup and supported nodes.
+
+## Inspect every detail
+
+| UV checker | Texture library |
 | --- | --- |
-| ![Texture library and channel viewer](docs/screenshots/textures.png) | ![UV checker view of the model](docs/screenshots/inspection.png) |
+| ![UV checker view of the model](docs/screenshots/inspection.png) | ![Texture library and channel viewer](docs/screenshots/textures.png) |
+
+- **Surface views:** material solo, UV checker, and UV layout
+- **Geometry views:** normals, bones, bone weights, face orientation, and cost heatmaps
+- **Performance:** draw calls, load timings, and memory estimates
+- **Batch processing** for whole folders
 
 Demo model: [Littlest Tokyo](https://www.artstation.com/artwork/1AGwX) by Glen Fox, CC Attribution, from the [Three.js examples](https://threejs.org/examples/#webgl_animation_keyframes).
-
-## Blender and material nodes
-
-Download the Blender add-on from **Export → Blender bridge**, or build it with `npm run build` to create `dist/glb-viewer-bridge.zip`. Install the ZIP in Blender 4.2+, open the **GLB Viewer** sidebar, choose an output folder, and click **Send to GLB Viewer**. Open its `model.glb` here once and enable **Watch exports**. Blender can also export automatically after saving the `.blend` file.
-
-Open **Materials** to add and connect supported nodes, edit values and image textures, and preview them on a selected material. **Save graph** creates an editable JSON file; **Export TSL** creates a standalone Three.js material factory. Editor drafts last for this session and are exported separately, not baked into optimized GLBs. Unsupported Blender graphs retain glTF fallback materials with diagnostics. This is a supported-node translator, not full Cycles parity or two-way Blender synchronization.
-
-See [Blender bridge and node editor](docs/blender-bridge.md) for supported nodes, shortcuts, and integration.
 
 ## Development
 
@@ -81,5 +90,5 @@ See [Blender bridge and node editor](docs/blender-bridge.md) for supported nodes
 
 - Version tags trigger tested Apple Silicon and Intel release builds.
 - In-app update checks find new GitHub releases.
-- Unsigned builds use manual installation; automatic installation requires Apple signing credentials.
+- Builds without Apple credentials are ad-hoc signed and use manual installation; automatic installation requires Apple signing credentials.
 - Presets, budgets, and history survive app updates.

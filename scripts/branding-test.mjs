@@ -6,7 +6,8 @@ import assert from "node:assert/strict";
 const directory = await mkdtemp(path.join(tmpdir(), "glb-branding-"));
 let app;
 try {
-  const env = { ...process.env, GLB_VIEWER_USER_DATA: directory };
+  const env = { ...process.env, GLB_VIEWER_SKIP_SAMPLE: "1",
+    GLB_VIEWER_USER_DATA: directory };
   delete env.ELECTRON_RUN_AS_NODE;
   app = await electron.launch({
     args: process.env.SMOKE_APP_PATH ? [] : ["."],

@@ -5,6 +5,7 @@ export type ModelFile = {
   optimized?: boolean;
   sourceKey?: string;
   reloaded?: boolean;
+  sample?: boolean;
 };
 export type TextureInfo = {
   id: number;

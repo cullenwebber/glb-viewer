@@ -1,7 +1,6 @@
-## GLB Viewer 1.3.2
+## GLB Viewer 1.4.0
 
-- Fixes the macOS "GLB Viewer is damaged and can't be opened" error on downloaded builds.
-- Reorganizes the README around screenshots, with KTX2 texture compression up front.
+- Opens with the animated Littlest Tokyo model by Glen Fox (CC Attribution), so you can try texture compression, optimization, and comparison straight away.
 
 Choose the **arm64** DMG for Apple Silicon or **x64** for Intel. Copy GLB Viewer to Applications.
 

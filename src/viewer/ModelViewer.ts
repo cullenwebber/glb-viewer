@@ -857,6 +857,7 @@ export class ModelViewer {
       this.renderer.render(this.scene, this.renderCamera);
       this.emit({
         optimized: !!file.optimized,
+        sample: !!file.sample,
         bridgeMaterials: this.bridge.reports,
         timings: {
           readMs,

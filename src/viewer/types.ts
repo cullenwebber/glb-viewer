@@ -8,6 +8,7 @@ export type SceneNode = {
   mesh: boolean;
   bone: boolean;
   sourceIndex: number | null;
+  materialKeys: string[];
 };
 export type ViewerState = {
   sceneCameras: { id: string; name: string }[];
@@ -16,6 +17,8 @@ export type ViewerState = {
   sceneLightsEnabled: boolean;
   sceneHelpers: boolean;
   materialSlots: { key: string; name: string; graph: MaterialGraph }[];
+  activeMaterialKey: string;
+  selectedMaterialKeys: string[];
   rendererBackend: string;
   bridgeMaterials: BridgeMaterialReport[];
   name: string;
@@ -117,14 +120,16 @@ export const initialViewerState: ViewerState = {
   sceneLightsEnabled: true,
   sceneHelpers: false,
   materialSlots: [],
+  activeMaterialKey: "",
+  selectedMaterialKeys: [],
   rendererBackend: "Initializing GPU…",
   bridgeMaterials: [],
-  name: "Studio sample",
+  name: "",
   size: 0,
-  demo: true,
+  demo: false,
   sample: false,
   optimized: false,
-  loading: false,
+  loading: true,
   error: null,
   triangles: 0,
   vertices: 0,

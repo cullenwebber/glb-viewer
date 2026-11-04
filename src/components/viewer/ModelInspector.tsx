@@ -6,7 +6,13 @@ import { DisplayControls } from "./DisplayControls";
 import { LightingControls } from "./LightingControls";
 import { ThreeJsSnippet } from "./ThreeJsSnippet";
 import type { ViewerController } from "@/hooks/use-model-viewer";
-export function ModelInspector({ viewer }: { viewer: ViewerController }) {
+export function ModelInspector({
+  viewer,
+  onInspectMaterial,
+}: {
+  viewer: ViewerController;
+  onInspectMaterial?: (key: string) => void;
+}) {
   return (
     <aside className="model-inspector">
       <div className="panel-heading">
@@ -14,7 +20,10 @@ export function ModelInspector({ viewer }: { viewer: ViewerController }) {
       </div>
       <ScrollArea className="min-h-0 flex-1">
         <div className="inspector-sections">
-          <ModelDetails state={viewer.state} />
+          <ModelDetails
+            state={viewer.state}
+            onInspectMaterial={onInspectMaterial}
+          />
           <DisplayControls
             display={viewer.display}
             onChange={viewer.updateDisplay}

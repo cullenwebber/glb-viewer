@@ -21,7 +21,7 @@ export function materialNodeCategory(type: string) {
     return "Texture";
   if (["mapping", "vectorMath", "bump", "normalMap"].includes(type))
     return "Vector";
-  if (["math", "mapRange", "ramp", "reroute"].includes(type))
+  if (["math", "mapRange", "ramp", "reroute", "separateColor"].includes(type))
     return "Converter";
   if (type === "mix") return "Color";
   return "Input";
@@ -38,6 +38,10 @@ export type MaterialNode = {
   invert?: boolean;
   errors?: string[];
   image?: string;
+  sourceTexture?: string;
+  imageName?: string;
+  imageSize?: number[];
+  uvChannel?: number;
   colorSpace?: string;
   extension?: string;
   interpolation?: string;
@@ -51,6 +55,14 @@ export type MaterialGraph = {
   output: string | null;
   nodes: MaterialNode[];
   transparent?: boolean;
+  warnings?: string[];
+  renderSettings?: {
+    side: number;
+    alphaTest: number;
+    depthWrite: boolean;
+    vertexColors: boolean;
+    flatShading: boolean;
+  };
 };
 type SocketDefinition = {
   name: string;
@@ -159,6 +171,7 @@ export const materialNodeTypes: Record<
     inputs: [
       { name: "color", kind: "color", value: [0.5, 0.5, 1] },
       { name: "strength", kind: "float", value: 1 },
+      { name: "scale", kind: "vector", value: [1, 1, 1] },
     ],
     outputs: [{ name: "normal", kind: "vector" }],
   },
@@ -187,6 +200,15 @@ export const materialNodeTypes: Record<
       { name: "alpha", kind: "float" },
     ],
   },
+  separateColor: {
+    label: "Separate Color",
+    inputs: [{ name: "color", kind: "color", value: [0, 0, 0] }],
+    outputs: [
+      { name: "red", kind: "float" },
+      { name: "green", kind: "float" },
+      { name: "blue", kind: "float" },
+    ],
+  },
   reroute: {
     label: "Reroute",
     inputs: [{ name: "value", kind: "float", value: 0 }],
@@ -203,6 +225,7 @@ export const materialNodeTypes: Record<
       { name: "emission", kind: "color", value: [0, 0, 0] },
       { name: "emissionStrength", kind: "float", value: 1 },
       { name: "normal", kind: "vector" },
+      { name: "ao", kind: "float", value: 1 },
       { name: "transmission", kind: "float", value: 0 },
       { name: "thickness", kind: "float", value: 0 },
       { name: "attenuationDistance", kind: "float", value: 1000000 },
@@ -365,7 +388,7 @@ export function materialNodeHeight(node: MaterialNode) {
     node.type === "ramp"
       ? 120 + (node.stops?.length || 0) * 100
       : node.type === "image"
-        ? 180
+        ? 320
         : [
               "math",
               "mapRange",

@@ -201,6 +201,7 @@ export interface DesktopApi {
   chooseModel(): Promise<ModelFile | null>;
   openFile(file: File): Promise<ModelFile>;
   onOpen(callback: (file: ModelFile) => void): () => void;
+  onDemo(callback: () => void): () => void;
   importTextures(token: string): Promise<Analysis | null>;
   analyzeModel(token: string): Promise<Analysis>;
   optimizeModel(token: string, plan: Plan): Promise<Report>;

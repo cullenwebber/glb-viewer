@@ -51,7 +51,7 @@ protocol.registerSchemesAsPrivileged([
 let window;
 let rendererReady = false;
 let pending = process.argv.find((arg) => /\.(glb|gltf)$/i.test(arg));
-let sampleOffered = !!process.env.GLB_VIEWER_SKIP_SAMPLE;
+const skipStartupSample = !!process.env.GLB_VIEWER_SKIP_SAMPLE;
 const samplePath = path.join(
   app.isPackaged ? process.resourcesPath : path.join(__dirname, "..", "assets"),
   "samples",
@@ -567,16 +567,13 @@ app.whenReady().then(() => {
     if (pending) {
       const file = pending;
       pending = null;
-      sampleOffered = true;
       void deliver(file);
-    } else if (!sampleOffered) {
-      sampleOffered = true;
-      // The built-in knot stays on screen if the sample is unavailable.
-      void fs.access(samplePath).then(
-        () => deliver(samplePath),
-        () => {},
+    } else if (!skipStartupSample) {
+      void grant(samplePath).then(
+        (model) => window.webContents.send("open-model", model),
+        () => window.webContents.send("show-demo"),
       );
-    }
+    } else window.webContents.send("show-demo");
   });
   window.webContents.on("did-start-loading", () => {
     rendererReady = false;

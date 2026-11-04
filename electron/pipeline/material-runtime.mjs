@@ -142,39 +142,58 @@ export async function applyBridgeMaterials(root, options = {}) {
             result = args[0].x.mul(6.28318530718).sin().mul(0.5).add(0.5);
             break;
           case "image": {
-            const key = `${entry.image}:${entry.colorSpace}:${entry.extension}:${entry.interpolation}`;
+            const key = `${entry.sourceTexture || entry.image}:${entry.colorSpace}:${entry.extension}:${entry.interpolation}`;
             let image = textures.get(key);
             if (!image) {
-              const compressed = entry.image.startsWith("data:image/ktx2;");
+              const compressed = entry.image?.startsWith("data:image/ktx2;");
               if (compressed && !options.loadKTX2)
                 throw new Error(
                   "KTX2 textures require a configured loadKTX2 callback.",
                 );
-              image = await (compressed
-                ? options.loadKTX2(entry.image)
-                : new TextureLoader().loadAsync(entry.image));
-              image.flipY = false;
+              if (entry.sourceTexture) {
+                if (!options.resolveTexture)
+                  throw new Error(
+                    "Model textures require a resolveTexture callback.",
+                  );
+                const original = await options.resolveTexture(
+                  entry.sourceTexture,
+                );
+                if (!original?.isTexture)
+                  throw new Error(
+                    `Model texture is unavailable: ${entry.sourceTexture}`,
+                  );
+                image = original.clone();
+              } else
+                image = await (compressed
+                  ? options.loadKTX2(entry.image)
+                  : new TextureLoader().loadAsync(entry.image));
+              if (!entry.sourceTexture) image.flipY = false;
               image.colorSpace =
                 entry.colorSpace === "srgb" ? SRGBColorSpace : NoColorSpace;
-              image.wrapS = image.wrapT =
-                entry.extension === "repeat"
-                  ? RepeatWrapping
-                  : ClampToEdgeWrapping;
-              image.magFilter =
-                entry.interpolation === "closest"
-                  ? NearestFilter
-                  : LinearFilter;
-              image.minFilter =
-                compressed && image.mipmaps.length > 1
-                  ? entry.interpolation === "closest"
-                    ? NearestMipmapNearestFilter
-                    : LinearMipmapLinearFilter
-                  : image.magFilter;
-              image.generateMipmaps = false;
+              if (entry.extension !== "source")
+                image.wrapS = image.wrapT =
+                  entry.extension === "repeat"
+                    ? RepeatWrapping
+                    : ClampToEdgeWrapping;
+              if (entry.interpolation !== "source") {
+                image.magFilter =
+                  entry.interpolation === "closest"
+                    ? NearestFilter
+                    : LinearFilter;
+                image.minFilter =
+                  compressed && image.mipmaps.length > 1
+                    ? entry.interpolation === "closest"
+                      ? NearestMipmapNearestFilter
+                      : LinearMipmapLinearFilter
+                    : image.magFilter;
+                image.generateMipmaps = false;
+              }
               ownedTextures.add(image);
               textures.set(key, image);
             }
-            result = texture(image, vec2(args[0].x, args[0].y.oneMinus()));
+            result = entry.nativeCoordinates
+              ? texture(image)
+              : texture(image, vec2(args[0].x, args[0].y.oneMinus()));
             break;
           }
           case "rgb":
@@ -182,6 +201,18 @@ export async function applyBridgeMaterials(root, options = {}) {
             break;
           case "alpha":
             result = args[0].a;
+            break;
+          case "channel_red":
+          case "channel_green":
+          case "channel_blue":
+            result =
+              args[0][
+                entry.op === "channel_red"
+                  ? "r"
+                  : entry.op === "channel_green"
+                    ? "g"
+                    : "b"
+              ];
             break;
           case "add":
           case "sub":
@@ -208,6 +239,9 @@ export async function applyBridgeMaterials(root, options = {}) {
       material.transparent = plan.transparent ?? source.transparent;
       material.alphaTest = source.alphaTest;
       material.depthWrite = source.depthWrite;
+      material.vertexColors = source.vertexColors;
+      material.flatShading = source.flatShading ?? false;
+      if (plan.renderSettings) Object.assign(material, plan.renderSettings);
       const outputs = Object.fromEntries(
         Object.entries(plan.outputs).map(([name, id]) => [
           name,

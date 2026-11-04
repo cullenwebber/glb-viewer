@@ -102,7 +102,7 @@ export function materialUtility(TSL, operation, args) {
       );
     }
     case "normalMap": {
-      const normal = first.mul(2).sub(1);
+      const normal = first.mul(2).sub(1).mul(args[2]);
       const strength = second.max(0);
       return TSL.normalMap(
         normal
@@ -117,6 +117,7 @@ export function materialUtility(TSL, operation, args) {
   }
 }
 export const physicalInputs = {
+  ao: ["aoNode", "float", 1],
   transmission: ["transmissionNode", "float", 0],
   thickness: ["thicknessNode", "float", 0],
   attenuationDistance: ["attenuationDistanceNode", "float", 1000000],
@@ -369,6 +370,7 @@ export function compileMaterialGraph(raw) {
       result = step("normalMap", "vec3", [
         input(node, "color", "vec3", [0.5, 0.5, 1]).id,
         input(node, "strength", "float", 1).id,
+        input(node, "scale", "vec3", [1, 1, 1]).id,
       ]);
     } else if (node.type === "ramp" && ["color", "alpha"].includes(socket)) {
       if (
@@ -479,19 +481,34 @@ export function compileMaterialGraph(raw) {
         step("clamp", "float", [input(node, "factor", "float", 0.5).id]).id,
       ]);
       if (node.clamp) result = step("clamp", "vec3", [result.id]);
+    } else if (
+      node.type === "separateColor" &&
+      ["red", "green", "blue"].includes(socket)
+    ) {
+      result = step(`channel_${socket}`, "float", [
+        input(node, "color", "vec3", [0, 0, 0]).id,
+      ]);
     } else if (node.type === "image" && ["color", "alpha"].includes(socket)) {
+      const referenced =
+        typeof node.sourceTexture === "string" &&
+        /^[a-zA-Z0-9:_-]{1,200}$/.test(node.sourceTexture);
       if (
-        typeof node.image !== "string" ||
-        node.image.length > 32 * 1024 * 1024 ||
-        !/^data:image\/(png|ktx2);base64,[A-Za-z0-9+/=]+$/.test(node.image)
+        !referenced &&
+        (typeof node.image !== "string" ||
+          node.image.length > 32 * 1024 * 1024 ||
+          !/^data:image\/(png|ktx2);base64,[A-Za-z0-9+/=]+$/.test(node.image))
       )
         throw new Error(
           `${node.label}: expected an embedded PNG or KTX2 image (at most 32 MB).`,
         );
       if (
         !["srgb", "linear"].includes(node.colorSpace) ||
-        !["repeat", "extend"].includes(node.extension) ||
-        !["linear", "closest"].includes(node.interpolation)
+        !(
+          referenced ? ["source", "repeat", "extend"] : ["repeat", "extend"]
+        ).includes(node.extension) ||
+        !(
+          referenced ? ["source", "linear", "closest"] : ["linear", "closest"]
+        ).includes(node.interpolation)
       )
         throw new Error(`${node.label}: unsupported image settings.`);
       const coordinates = node.inputs?.vector
@@ -499,6 +516,8 @@ export function compileMaterialGraph(raw) {
         : step("uv", "vec3");
       const sample = step("image", "vec4", [coordinates.id], {
         image: node.image,
+        sourceTexture: referenced ? node.sourceTexture : undefined,
+        nativeCoordinates: referenced && !node.inputs?.vector,
         colorSpace: node.colorSpace,
         extension: node.extension,
         interpolation: node.interpolation,
@@ -554,7 +573,26 @@ export function compileMaterialGraph(raw) {
     outputs.normal = input(principled, "normal", "vec3", [0, 0, 1]).id;
   visited.add(terminal.id);
   visited.add(principled.id);
+  const renderSettings =
+    graph.renderSettings &&
+    Object.fromEntries(
+      ["side", "alphaTest", "depthWrite", "vertexColors", "flatShading"].map(
+        (name) => [name, graph.renderSettings[name]],
+      ),
+    );
+  if (
+    renderSettings &&
+    (![0, 1, 2].includes(renderSettings.side) ||
+      !Number.isFinite(renderSettings.alphaTest) ||
+      renderSettings.alphaTest < 0 ||
+      renderSettings.alphaTest > 1 ||
+      ["depthWrite", "vertexColors", "flatShading"].some(
+        (name) => typeof renderSettings[name] !== "boolean",
+      ))
+  )
+    throw new Error("Invalid source material rendering settings.");
   return {
+    renderSettings,
     transparent:
       typeof graph.transparent === "boolean" ? graph.transparent : null,
     id: graph.id,
@@ -575,7 +613,7 @@ export function materialModule(raw) {
     "import { MeshPhysicalNodeMaterial, TextureLoader, SRGBColorSpace, NoColorSpace, RepeatWrapping, ClampToEdgeWrapping, NearestFilter, LinearFilter, NearestMipmapNearestFilter, LinearMipmapLinearFilter, type Texture } from 'three/webgpu';",
     "import * as TSL from 'three/tsl';",
     `const materialUtility: (TSL: typeof import('three/tsl'), operation: string, args: any[]) => any = ${materialUtility.toString()};`,
-    "export async function createMaterial(options: { loadKTX2?: (url: string) => Promise<Texture> } = {}) {",
+    "export async function createMaterial(options: { loadKTX2?: (url: string) => Promise<Texture>; resolveTexture?: (reference: string) => Texture | Promise<Texture> } = {}) {",
     "  const textures: Texture[] = [];",
     "  try {",
   ];
@@ -665,6 +703,26 @@ export function materialModule(raw) {
         break;
       case "image": {
         const image = `image_${entry.id}`;
+        if (entry.sourceTexture) {
+          lines.push(
+            "    if (!options.resolveTexture) throw new Error('This graph references model textures. Pass options.resolveTexture(reference) from the loaded model.');",
+            `    const ${image} = (await options.resolveTexture(${JSON.stringify(entry.sourceTexture)})).clone();`,
+            `    textures.push(${image});`,
+            `    ${image}.colorSpace = ${entry.colorSpace === "srgb" ? "SRGBColorSpace" : "NoColorSpace"};`,
+          );
+          if (entry.extension !== "source")
+            lines.push(
+              `    ${image}.wrapS = ${image}.wrapT = ${entry.extension === "repeat" ? "RepeatWrapping" : "ClampToEdgeWrapping"};`,
+            );
+          if (entry.interpolation !== "source")
+            lines.push(
+              `    ${image}.magFilter = ${image}.minFilter = ${entry.interpolation === "closest" ? "NearestFilter" : "LinearFilter"};`,
+            );
+          expression = entry.nativeCoordinates
+            ? `TSL.texture(${image})`
+            : `TSL.texture(${image}, TSL.vec2(${args[0]}.x, ${args[0]}.y.oneMinus()))`;
+          break;
+        }
         const compressed = entry.image.startsWith("data:image/ktx2;");
         if (compressed)
           lines.push(
@@ -689,6 +747,11 @@ export function materialModule(raw) {
       case "alpha":
         expression = `${args[0]}.a`;
         break;
+      case "channel_red":
+      case "channel_green":
+      case "channel_blue":
+        expression = `${args[0]}.${entry.op === "channel_red" ? "r" : entry.op === "channel_green" ? "g" : "b"}`;
+        break;
       case "clamp":
         expression = `${args[0]}.clamp(0, 1)`;
         break;
@@ -707,6 +770,9 @@ export function materialModule(raw) {
     `    material.name = ${JSON.stringify(plan.name)};`,
     `    material.transparent = ${plan.transparent === true};`,
   );
+  if (plan.renderSettings)
+    for (const [name, value] of Object.entries(plan.renderSettings))
+      lines.push(`    material.${name} = ${JSON.stringify(value)};`);
   for (const [property, output] of Object.entries({
     colorNode: "color",
     roughnessNode: "roughness",

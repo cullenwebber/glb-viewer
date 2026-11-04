@@ -16,5 +16,8 @@ export type BridgeMaterials = {
 };
 export function applyBridgeMaterials(
   root: Object3D,
-  options?: { loadKTX2?: (url: string) => Promise<Texture> },
+  options?: {
+    loadKTX2?: (url: string) => Promise<Texture>;
+    resolveTexture?: (reference: string) => Texture | Promise<Texture>;
+  },
 ): Promise<BridgeMaterials>;

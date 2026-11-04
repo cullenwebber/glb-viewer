@@ -76,4 +76,9 @@ contextBridge.exposeInMainWorld("desktop", {
     ipcRenderer.send("renderer-ready");
     return () => ipcRenderer.removeListener("open-model", listener);
   },
+  onDemo: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on("show-demo", listener);
+    return () => ipcRenderer.removeListener("show-demo", listener);
+  },
 });

@@ -98,7 +98,7 @@ const snapValue = createMaterialNode("value", [-160, 0]);
 snapGraph.nodes.push(snapValue);
 const snapSurface = snapGraph.nodes[0];
 assert.equal(materialInputs(snapSurface).length, 8);
-assert.equal(materialInputs({ ...snapSurface, expanded: true }).length, 19);
+assert.equal(materialInputs({ ...snapSurface, expanded: true }).length, 20);
 const physicalLink = connectMaterialNodes(
   snapGraph,
   snapValue.id,

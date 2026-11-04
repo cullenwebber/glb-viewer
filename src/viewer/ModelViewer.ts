@@ -14,11 +14,7 @@ import {
   BRIDGE_KEY,
   compileMaterialGraph,
 } from "../../electron/pipeline/material-graph.mjs";
-import {
-  createMaterialGraph,
-  parseMaterialGraph,
-  type MaterialGraph,
-} from "../lib/material-editor";
+import { parseMaterialGraph, type MaterialGraph } from "../lib/material-editor";
 import {
   geometryBytes,
   textureMemory,
@@ -26,6 +22,8 @@ import {
   type MeshMetric,
 } from "./performance";
 import { ObjectSelection } from "./selection";
+import { sourceMaterialGraph } from "../lib/source-material-graph";
+import { textureThumbnail } from "../texture-preview";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
@@ -84,6 +82,8 @@ export class ModelViewer {
   private model?: THREE.Object3D;
   private bridge?: BridgeMaterials;
   private materialSources = new Map<string, THREE.Material>();
+  private sourceTextures = new Map<string, THREE.Texture>();
+  private textureThumbnails = new Map<string, Promise<string>>();
   private materialPreviews = new Map<
     string,
     {
@@ -109,6 +109,7 @@ export class ModelViewer {
     private onChange: (state: ViewerState) => void,
     private onSource: (file: ModelFile) => void,
     private onDisplay?: (settings: DisplaySettings) => void,
+    showDemo = false,
   ) {
     this.renderer = new WebGPURenderer({ antialias: true });
     this.renderer.setPixelRatio(
@@ -144,7 +145,7 @@ export class ModelViewer {
     });
     this.renderer.domElement.addEventListener("pointerup", (event) => {
       if (
-        this.display.inspection !== "weights" ||
+        event.button !== 0 ||
         Math.hypot(
           event.clientX - pointerStart.x,
           event.clientY - pointerStart.y,
@@ -153,6 +154,29 @@ export class ModelViewer {
         return;
       const rect = this.renderer.domElement.getBoundingClientRect(),
         point = new THREE.Vector3();
+      if (this.display.inspection !== "weights") {
+        if (!this.model) return;
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(
+          new THREE.Vector2(
+            ((event.clientX - rect.left) / rect.width) * 2 - 1,
+            -((event.clientY - rect.top) / rect.height) * 2 + 1,
+          ),
+          this.renderCamera,
+        );
+        const hit = raycaster
+          .intersectObject(this.model, true)
+          .find(
+            (hit) =>
+              (hit.object as THREE.Mesh).isMesh &&
+              hit.object.visible &&
+              !this.hiddenByParent(hit.object),
+          );
+        if (hit)
+          this.selectObject(hit.object.uuid, hit.face?.materialIndex, false);
+        else this.clearSelection();
+        return;
+      }
       let nearest: THREE.Bone | undefined,
         distance = 14;
       this.model?.traverse((object) => {
@@ -194,6 +218,17 @@ export class ModelViewer {
       this.resizeSceneCamera();
     });
     this.observer.observe(element);
+    if (showDemo) this.showDemo();
+    this.ready = this.initialize();
+    void this.ready.catch((error) => {
+      if (!this.disposed)
+        this.emit({
+          error: `Renderer initialization failed: ${String(error)}`,
+        });
+    });
+  }
+  showDemo() {
+    if (this.disposed || this.model) return;
     const demo = new THREE.Group();
     demo.name = "Studio sample";
     const sculpture = new THREE.Mesh(
@@ -209,13 +244,6 @@ export class ModelViewer {
     sculpture.position.y = 1.5;
     demo.add(sculpture);
     this.install(demo, [], "Studio sample", 0, true);
-    this.ready = this.initialize();
-    void this.ready.catch((error) => {
-      if (!this.disposed)
-        this.emit({
-          error: `Renderer initialization failed: ${String(error)}`,
-        });
-    });
   }
   private async initialize() {
     await this.renderer.init();
@@ -396,7 +424,26 @@ export class ModelViewer {
     this.controls.minDistance = radius * 0.01;
     this.controls.update();
   }
-  selectObject(id: string) {
+  private hiddenByParent(object: THREE.Object3D) {
+    for (let parent = object.parent; parent; parent = parent.parent)
+      if (!parent.visible) return true;
+    return false;
+  }
+  selectMaterial(key: string) {
+    if (this.state.materialSlots.some((slot) => slot.key === key))
+      this.emit({ activeMaterialKey: key });
+  }
+  async textureThumbnail(reference: string) {
+    const texture = this.sourceTextures.get(reference);
+    if (!texture) throw new Error("The source texture is no longer loaded.");
+    let thumbnail = this.textureThumbnails.get(reference);
+    if (!thumbnail) {
+      thumbnail = textureThumbnail(texture);
+      this.textureThumbnails.set(reference, thumbnail);
+    }
+    return thumbnail;
+  }
+  selectObject(id: string, materialIndex?: number, frame = true) {
     const object = this.model?.getObjectByProperty("uuid", id);
     if (!object) return;
     if (
@@ -407,12 +454,33 @@ export class ModelViewer {
       this.onDisplay?.(this.display);
     }
     this.selection.select(object, this.display.inspection === "material");
-    this.emit({ selectedId: id, selectedName: object.name || object.type });
-    this.frame(object);
+    const materialKeys = new Set<string>();
+    object.traverse((child) => {
+      for (const key of this.state.nodes.find((node) => node.id === child.uuid)
+        ?.materialKeys || [])
+        materialKeys.add(key);
+    });
+    const selectedMaterialKeys = [...materialKeys];
+    const direct =
+      this.state.nodes.find((node) => node.id === id)?.materialKeys || [];
+    this.emit({
+      selectedId: id,
+      selectedName: object.name || object.type,
+      selectedMaterialKeys,
+      activeMaterialKey:
+        direct[materialIndex ?? 0] ||
+        selectedMaterialKeys[0] ||
+        this.state.activeMaterialKey,
+    });
+    if (frame) this.frame(object);
   }
   clearSelection() {
     this.selection.clear();
-    this.emit({ selectedId: null, selectedName: null });
+    this.emit({
+      selectedId: null,
+      selectedName: null,
+      selectedMaterialKeys: [],
+    });
   }
   private install(
     root: THREE.Object3D,
@@ -580,6 +648,12 @@ export class ModelViewer {
           mesh: !!mesh.isMesh,
           bone: !!(object as THREE.Bone).isBone,
           sourceIndex: associations?.get(object)?.nodes ?? null,
+          materialKeys: mesh.isMesh
+            ? (Array.isArray(mesh.material)
+                ? mesh.material
+                : [mesh.material]
+              ).map((material) => material.uuid)
+            : [],
         });
       }
     });
@@ -601,20 +675,33 @@ export class ModelViewer {
     this.materialSources = new Map(
       [...materials].map((material) => [material.uuid, material]),
     );
+    const textureNamespace = [...`${name}:${size}`]
+      .reduce(
+        (hash, character) =>
+          Math.imul(hash ^ character.charCodeAt(0), 16777619) >>> 0,
+        2166136261,
+      )
+      .toString(16);
+    const textureReferences = new Map(
+      [...textures].map((texture, index) => [
+        texture,
+        `model-${textureNamespace}-texture-${index}`,
+      ]),
+    );
+    this.sourceTextures = new Map(
+      [...textureReferences].map(([texture, reference]) => [
+        reference,
+        texture,
+      ]),
+    );
+    this.textureThumbnails.clear();
     const materialSlots = [...materials].map((material) => {
       let graph: MaterialGraph;
       try {
         const raw = material.userData[BRIDGE_KEY];
         graph = parseMaterialGraph(raw);
       } catch {
-        const standard = material as THREE.MeshStandardMaterial;
-        graph = createMaterialGraph(material.name || "Material", {
-          color: standard.color?.toArray(),
-          roughness: standard.roughness ?? 0.5,
-          metalness: standard.metalness ?? 0,
-          alpha: material.opacity,
-          transparent: material.transparent,
-        });
+        graph = sourceMaterialGraph(material, textureReferences);
       }
       graph = {
         ...graph,
@@ -628,6 +715,8 @@ export class ModelViewer {
     });
     this.emit({
       materialSlots,
+      activeMaterialKey: materialSlots[0]?.key || "",
+      selectedMaterialKeys: [],
       name,
       size,
       demo,
@@ -690,6 +779,8 @@ export class ModelViewer {
     }
     this.materialPreviews.clear();
     this.materialSources.clear();
+    this.sourceTextures.clear();
+    this.textureThumbnails.clear();
     this.materialRequests.clear();
   }
   async previewMaterialGraph(key: string, graph: MaterialGraph) {
@@ -706,6 +797,12 @@ export class ModelViewer {
       proxy = new THREE.Mesh(geometry, source);
     const bridge = await applyBridgeMaterials(proxy, {
       loadKTX2: (url) => this.ktx.loadAsync(url),
+      resolveTexture: (reference) => {
+        const texture = this.sourceTextures.get(reference);
+        if (!texture)
+          throw new Error(`Model texture is unavailable: ${reference}`);
+        return texture;
+      },
     });
     geometry.dispose();
     if (
@@ -724,6 +821,7 @@ export class ModelViewer {
         bridge.reports[0]?.message || "Could not translate material.",
       );
     }
+    const selected = this.selection.object;
     this.selection.clear();
     this.inspection.restore();
     const previous = this.materialPreviews.get(key);
@@ -738,6 +836,7 @@ export class ModelViewer {
     });
     const changedMode = this.display.inspection !== "material";
     this.setDisplay({ ...this.display, inspection: "material" });
+    if (selected) this.selection.select(selected, false);
     if (changedMode) this.onDisplay?.(this.display);
     const reports = [
       ...(this.bridge?.reports || []),
@@ -762,8 +861,6 @@ export class ModelViewer {
       materials: activeMaterials.size,
       textures: activeTextures.size,
       textureBytes: textureMemory(activeTextures),
-      selectedId: null,
-      selectedName: null,
       materialSlots: this.state.materialSlots.map((slot) =>
         slot.key === key ? { ...slot, graph } : slot,
       ),

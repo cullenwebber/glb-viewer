@@ -1,4 +1,5 @@
-import { useRef, type PointerEvent } from "react";
+import { useRef, useState, useEffect, type PointerEvent } from "react";
+import { decodePreview } from "@/texture-preview";
 import { Color } from "three";
 import { X, Unplug } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,66 @@ import {
 } from "@/lib/material-editor";
 
 export const NODE_WIDTH = 240;
+function ImagePreview({
+  node,
+  loadThumbnail,
+}: {
+  node: MaterialNode;
+  loadThumbnail?: (reference: string) => Promise<string>;
+}) {
+  const [preview, setPreview] = useState("");
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    setPreview("");
+    setFailed(false);
+    const load = async () => {
+      if (node.sourceTexture && loadThumbnail)
+        return loadThumbnail(node.sourceTexture);
+      if (node.image?.startsWith("data:image/ktx2;")) {
+        const bytes = new Uint8Array(
+          await (await fetch(node.image)).arrayBuffer(),
+        );
+        return (await decodePreview(bytes, "image/ktx2")).toDataURL(
+          "image/png",
+        );
+      }
+      return node.image || "";
+    };
+    void load()
+      .then((value) => {
+        if (!cancelled) setPreview(value);
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [node.image, node.sourceTexture, loadThumbnail]);
+  if (!node.image && !node.sourceTexture) return null;
+  return (
+    <div className="material-texture-preview">
+      {preview ? (
+        <img
+          src={preview}
+          alt={`${node.imageName || node.label} texture preview`}
+        />
+      ) : (
+        <span>{failed ? "Preview unavailable" : "Loading preview…"}</span>
+      )}
+      <strong title={node.imageName || node.label}>
+        {node.imageName || node.label}
+      </strong>
+      <small>
+        {node.imageSize?.join(" × ")}
+        {node.sourceTexture
+          ? ` · UV${node.uvChannel ?? 0} · Model texture`
+          : " · Embedded image"}
+      </small>
+    </div>
+  );
+}
 export function wirePath(
   startX: number,
   startY: number,
@@ -72,6 +133,7 @@ export function MaterialNodeCard({
   onDelete,
   onActivate,
   onImage,
+  loadThumbnail,
 }: {
   node: MaterialNode;
   placing?: boolean;
@@ -91,6 +153,7 @@ export function MaterialNodeCard({
   onDelete: () => void;
   onActivate: () => void;
   onImage: (file: File) => void;
+  loadThumbnail?: (reference: string) => Promise<string>;
 }) {
   const definition = materialNodeTypes[node.type];
   const scrubbing = useRef(false);
@@ -544,8 +607,11 @@ export function MaterialNodeCard({
         )}
         {node.type === "image" && (
           <>
+            <ImagePreview node={node} loadThumbnail={loadThumbnail} />
             <label className="material-image-upload">
-              {node.image ? "Replace image…" : "Choose image…"}
+              {node.image || node.sourceTexture
+                ? "Replace image…"
+                : "Choose image…"}
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/webp,image/ktx2,.ktx2"
@@ -581,6 +647,11 @@ export function MaterialNodeCard({
                 onChange({ ...node, extension: event.target.value })
               }
             >
+              {node.sourceTexture && (
+                <NativeSelectOption value="source">
+                  Model wrap settings
+                </NativeSelectOption>
+              )}
               <NativeSelectOption value="repeat">Repeat</NativeSelectOption>
               <NativeSelectOption value="extend">Extend</NativeSelectOption>
             </NativeSelect>
@@ -591,6 +662,11 @@ export function MaterialNodeCard({
                 onChange({ ...node, interpolation: event.target.value })
               }
             >
+              {node.sourceTexture && (
+                <NativeSelectOption value="source">
+                  Model filtering / mipmaps
+                </NativeSelectOption>
+              )}
               <NativeSelectOption value="linear">Linear</NativeSelectOption>
               <NativeSelectOption value="closest">Closest</NativeSelectOption>
             </NativeSelect>

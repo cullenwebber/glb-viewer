@@ -4,6 +4,13 @@ export const physicalInputs: Record<
   [string, string, number | number[]]
 >;
 export type MaterialPlan = {
+  renderSettings?: {
+    side: number;
+    alphaTest: number;
+    depthWrite: boolean;
+    vertexColors: boolean;
+    flatShading: boolean;
+  };
   transparent: boolean | null;
   id: string;
   name: string;

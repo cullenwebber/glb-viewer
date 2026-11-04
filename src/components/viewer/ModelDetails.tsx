@@ -5,7 +5,14 @@ import {
 } from "@/components/ui/tooltip";
 import { bytesLabel } from "@/lib/format";
 import type { ViewerState } from "@/viewer/types";
-export function ModelDetails({ state }: { state: ViewerState }) {
+import { Button } from "@/components/ui/button";
+export function ModelDetails({
+  state,
+  onInspectMaterial,
+}: {
+  state: ViewerState;
+  onInspectMaterial?: (key: string) => void;
+}) {
   return (
     <section>
       <div className="asset-heading">
@@ -63,6 +70,29 @@ export function ModelDetails({ state }: { state: ViewerState }) {
         <div id="selected-object" className="selection-summary">
           <span>Selected</span>
           <strong>{state.selectedName}</strong>
+          <span>Materials ({state.selectedMaterialKeys.length})</span>
+          {state.selectedMaterialKeys.map((key) => {
+            const material = state.materialSlots.find(
+              (slot) => slot.key === key,
+            );
+            return (
+              <Button
+                key={key}
+                variant={
+                  key === state.activeMaterialKey ? "secondary" : "ghost"
+                }
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => onInspectMaterial?.(key)}
+                aria-label={`Inspect material ${material?.name || key}`}
+              >
+                {material?.name || "Unnamed material"}
+              </Button>
+            );
+          })}
+          {!state.selectedMaterialKeys.length && (
+            <span>No material on this object.</span>
+          )}
         </div>
       )}
     </section>

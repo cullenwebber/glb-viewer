@@ -42,14 +42,20 @@ export function App() {
       toast.error(errorMessage(error));
     }
   }, [viewer.load]);
-  useEffect(
-    () =>
-      window.desktop?.onOpen((file) => {
-        workbench.sourceLoaded(file);
-        void viewer.load(file).catch(() => {});
-      }),
-    [viewer.load],
-  );
+  useEffect(() => {
+    if (!window.desktop) return;
+    const stopDemo = window.desktop.onDemo(viewer.showDemo);
+    const stopOpen = window.desktop.onOpen((file) => {
+      workbench.sourceLoaded(file);
+      void viewer.load(file).catch(() => {
+        if (file.sample) viewer.showDemo();
+      });
+    });
+    return () => {
+      stopOpen();
+      stopDemo();
+    };
+  }, [viewer.load, viewer.showDemo]);
   useEffect(() => {
     function keydown(event: KeyboardEvent) {
       if (
@@ -165,7 +171,14 @@ export function App() {
                 workbench.tab === "performance" ? (
                   <PerformancePanel viewer={viewer} />
                 ) : (
-                  <ModelInspector viewer={viewer} />
+                  <ModelInspector
+                    viewer={viewer}
+                    onInspectMaterial={(key) => {
+                      viewer.selectMaterial(key);
+                      workbench.setTab("materials");
+                      workbench.setOpen(true);
+                    }}
+                  />
                 )
               }
             />

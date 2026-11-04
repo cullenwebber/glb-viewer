@@ -55,8 +55,7 @@ export function MaterialsWorkspace({
   viewer: ViewerController;
   active: boolean;
 }) {
-  const [targetKey, setTargetKey] = useState(""),
-    [drafts, setDrafts] = useState<Record<string, MaterialGraph>>({});
+  const [drafts, setDrafts] = useState<Record<string, MaterialGraph>>({});
   const [selected, setSelected] = useState<string | null>(null),
     [search, setSearch] = useState("");
   const [placing, setPlacing] = useState<MaterialNode | null>(null);
@@ -105,7 +104,9 @@ export function MaterialsWorkspace({
     started?: boolean;
   } | null>(null);
   const slots = viewer.state.materialSlots;
-  const target = slots.find((slot) => slot.key === targetKey) || slots[0];
+  const target =
+    slots.find((slot) => slot.key === viewer.state.activeMaterialKey) ||
+    slots[0];
   const key = target?.key || "",
     graph = drafts[key] || target?.graph;
   const graphRef = useRef(graph);
@@ -461,7 +462,17 @@ export function MaterialsWorkspace({
           ...current,
           nodes: current.nodes.map((entry) =>
             entry.id === node.id
-              ? { ...entry, image: encoded, errors: [] }
+              ? {
+                  ...entry,
+                  image: encoded,
+                  sourceTexture: undefined,
+                  imageName: file.name,
+                  imageSize: undefined,
+                  uvChannel: undefined,
+                  extension: "repeat",
+                  interpolation: "linear",
+                  errors: [],
+                }
               : entry,
           ),
         });
@@ -571,7 +582,7 @@ export function MaterialsWorkspace({
         <NativeSelect
           aria-label="Target material"
           value={key}
-          onChange={(event) => setTargetKey(event.target.value)}
+          onChange={(event) => viewer.selectMaterial(event.target.value)}
         >
           {slots.map((slot, index) => (
             <NativeSelectOption key={slot.key} value={slot.key}>
@@ -579,6 +590,18 @@ export function MaterialsWorkspace({
             </NativeSelectOption>
           ))}
         </NativeSelect>
+        <span
+          className="material-selection-context"
+          aria-label="Material assignment"
+        >
+          {viewer.state.selectedName
+            ? `${viewer.state.selectedName}: `
+            : "Used by: "}
+          {viewer.state.nodes
+            .filter((node) => node.materialKeys.includes(key))
+            .map((node) => node.name)
+            .join(", ") || "No mesh assignment"}
+        </span>
         <Button
           size="icon-sm"
           variant="ghost"
@@ -666,6 +689,20 @@ export function MaterialsWorkspace({
           }}
         />
       </div>
+      {(graph?.nodes.some((node) => node.sourceTexture) ||
+        graph?.warnings?.length) && (
+        <div className="material-source-note">
+          {graph.nodes.some((node) => node.sourceTexture) && (
+            <p>
+              Model textures are referenced, not duplicated. Exported TSL needs
+              a resolveTexture callback for the loaded model.
+            </p>
+          )}
+          {graph.warnings?.map((warning) => (
+            <p key={warning}>{warning}</p>
+          ))}
+        </div>
+      )}
       <div className="materials-body">
         <aside className="material-palette" aria-label="Material node palette">
           {graph && (
@@ -1180,6 +1217,7 @@ export function MaterialsWorkspace({
                   onImage={(file) => {
                     void image(node, file);
                   }}
+                  loadThumbnail={viewer.textureThumbnail}
                 />
               ),
             )}

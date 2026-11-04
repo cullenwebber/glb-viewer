@@ -26,6 +26,7 @@ export function useModelViewer(onSource: (file: ModelFile) => void) {
         setState,
         (file) => sourceHandler.current(file),
         setDisplay,
+        !window.desktop,
       );
     } catch (error) {
       setState((previous) => ({ ...previous, error: errorMessage(error) }));
@@ -69,9 +70,16 @@ export function useModelViewer(onSource: (file: ModelFile) => void) {
     },
     [],
   );
+  const textureThumbnail = useCallback(async (reference: string) => {
+    if (!engine.current) throw new Error("The renderer is unavailable.");
+    return engine.current.textureThumbnail(reference);
+  }, []);
   return {
     viewportRef,
+    showDemo: useCallback(() => engine.current?.showDemo(), []),
     previewMaterialGraph,
+    textureThumbnail,
+    selectMaterial: (key: string) => engine.current?.selectMaterial(key),
     getUV: (set: number) => engine.current?.getUV(set),
     setMaterialParameter: (key: string, id: string, value: number) =>
       engine.current?.setMaterialParameter(key, id, value),

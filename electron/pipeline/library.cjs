@@ -51,7 +51,9 @@ function createLibrary(directory) {
           typeof rule.identity !== "string" ||
           !Array.isArray(rule.slots) ||
           !rule.settings ||
-          typeof rule.settings.format !== "string",
+          typeof rule.settings.format !== "string" ||
+          (rule.settings.remove !== undefined &&
+            typeof rule.settings.remove !== "boolean"),
       ) ||
       value.packs.some(
         (pack) =>

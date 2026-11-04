@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createRecipe, applyRecipe } from "../src/lib/recipes.ts";
+import { textureSettingStatus } from "../src/lib/texture-settings.ts";
 const image = (id, name, slot) => ({
   id,
   name,
@@ -88,6 +89,59 @@ assert(skipped.warnings.some((message) => message.includes("ambiguous")));
 assert.equal(skipped.plan.textures[0].format, "keep");
 assert(skipped.warnings.some((message) => message.includes("Skipped ORM")));
 const missingMesh = applyRecipe({ ...analysis, meshes: [] }, recipe);
+assert.equal(textureSettingStatus(analysis.textures[0]), "unchanged");
+assert.equal(
+  textureSettingStatus(analysis.textures[0], { maxSize: 0, format: "keep" }),
+  "unchanged",
+);
+assert.equal(
+  textureSettingStatus(analysis.textures[0], { maxSize: 512, format: "keep" }),
+  "configured",
+);
+assert.equal(
+  textureSettingStatus(analysis.textures[0], { maxSize: 0, format: "uastc" }),
+  "configured",
+);
+assert.equal(
+  textureSettingStatus(analysis.textures[0], {
+    maxSize: 512,
+    format: "uastc",
+    remove: true,
+  }),
+  "removed",
+);
+assert.equal(
+  textureSettingStatus({ ...analysis.textures[0], inputOnly: true }),
+  "input",
+);
+const removalRecipe = structuredClone(recipe);
+removalRecipe.textureRules[1].settings.remove = true;
+const removalRestored = applyRecipe(reordered, removalRecipe);
+assert.equal(
+  removalRestored.plan.textures.find((row) => row.id === 2).remove,
+  true,
+);
+const removalOnOtherModel = applyRecipe(otherModel, {
+  ...removalRecipe,
+  packs: [],
+});
+assert.equal(
+  removalOnOtherModel.plan.textures[1].remove,
+  undefined,
+  "Removal is never inferred from a role match on another image",
+);
+const compressedRemoval = applyRecipe(
+  {
+    ...analysis,
+    textures: analysis.textures.map((texture) => ({
+      ...texture,
+      editable: false,
+      mime: "image/ktx2",
+    })),
+  },
+  removalRecipe,
+);
+assert.equal(compressedRemoval.plan.textures[1].remove, true);
 assert.equal(missingMesh.plan.optimization.meshes.length, 0);
 assert(
   missingMesh.warnings.some((message) => message.includes("mesh overrides")),

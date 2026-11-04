@@ -6,6 +6,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { UVInspector } from "./UVInspector";
+import { BlenderMaterials } from "./BlenderMaterials";
 import type { ViewerController } from "@/hooks/use-model-viewer";
 export const inspectionModes = {
   material: "Material",
@@ -134,6 +135,7 @@ export function MaterialControls({ viewer: v }: { viewer: ViewerController }) {
         Inspect UV layout
       </Button>
       <UVInspector viewer={v} open={uv} onOpenChange={setUV} />
+      <BlenderMaterials viewer={v} />
     </section>
   );
 }

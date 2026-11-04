@@ -53,6 +53,7 @@ export function applyRecipe(
     if (!rule && texture.slots.length) {
       const candidates = recipe.textureRules.filter(
         (rule) =>
+          !rule.settings.remove &&
           rule.slots.length &&
           rule.slots.some((slot) => texture.slots.includes(slot)),
       );
@@ -71,6 +72,7 @@ export function applyRecipe(
     if (!rule) return { id: texture.id, maxSize: 0, format: "keep" };
     if (
       !texture.editable &&
+      !rule.settings.remove &&
       (rule.settings.format !== "keep" || rule.settings.maxSize)
     ) {
       warnings.push(

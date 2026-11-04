@@ -1,0 +1,439 @@
+.materials-workspace {
+  flex: 1;
+  min-height: 240px;
+  min-width: 0;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+  background: var(--background);
+}
+.materials-toolbar {
+  min-height: 44px;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.materials-toolbar h1 {
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 8px;
+}
+.materials-toolbar select {
+  max-width: 180px;
+  font-size: 11px;
+}
+.materials-body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+}
+.material-palette {
+  width: 162px;
+  flex-shrink: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  padding: 10px;
+  border-right: 1px solid var(--border);
+}
+.material-palette button {
+  justify-content: flex-start;
+  font-size: 11px;
+}
+.material-palette input {
+  font-size: 11px;
+}
+.material-palette-group {
+  display: grid;
+  gap: 1px;
+  padding-bottom: 8px;
+}
+.material-palette-group > span {
+  padding: 8px 7px 5px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+.material-palette-group button {
+  width: 100%;
+  height: 29px;
+}
+.material-palette-group button svg {
+  width: 12px;
+  opacity: 0.45;
+}
+.material-transparency {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 11px;
+  padding-top: 8px;
+}
+.material-canvas {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  overflow: clip;
+  touch-action: none;
+  outline: none;
+  background-color: var(--secondary);
+  background-image: radial-gradient(var(--border) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+.material-canvas:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+.material-graph-layer {
+  position: absolute;
+  inset: 0;
+  transform-origin: top left;
+  pointer-events: none;
+}
+.material-canvas.is-placing,
+.material-canvas.is-placing * {
+  cursor: crosshair;
+}
+.material-canvas.is-moving,
+.material-canvas.is-moving * {
+  cursor: grabbing;
+}
+.material-node {
+  --node-tint: var(--chart-1);
+  position: absolute;
+  pointer-events: auto;
+  user-select: none;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--card);
+  box-shadow: 0 3px 8px #0003;
+  font-size: 11px;
+  overflow: visible;
+}
+.material-node[data-node-category="Texture"] {
+  --node-tint: var(--warning);
+}
+.material-node[data-node-category="Shader"] {
+  --node-tint: var(--success);
+}
+.material-node[data-node-category="Output"] {
+  --node-tint: var(--destructive);
+}
+.material-node[data-node-category="Vector"] {
+  --node-tint: var(--chart-4);
+}
+.material-node[data-node-category="Converter"] {
+  --node-tint: var(--chart-3);
+}
+.material-node[data-node-category="Color"] {
+  --node-tint: var(--chart-5);
+}
+.material-node.is-selected {
+  z-index: 1;
+}
+.material-node.is-placing {
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0.88;
+  box-shadow:
+    0 8px 24px #0005,
+    0 0 0 1px var(--ring);
+}
+.material-node.is-placing * {
+  pointer-events: none;
+}
+.material-node.is-selected {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 1px var(--ring);
+}
+.material-node header {
+  height: 34px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 8px 8px 0 0;
+  background: color-mix(in srgb, var(--node-tint) 22%, var(--card));
+  cursor: grab;
+}
+.material-node header strong {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.material-node header button {
+  cursor: pointer;
+  color: var(--muted-foreground);
+  padding: 3px;
+  opacity: 0;
+  transition: opacity 100ms ease;
+}
+.material-node:hover header button,
+.material-node:focus-within header button {
+  opacity: 0.7;
+}
+.material-label-editor {
+  height: 26px;
+  visibility: hidden;
+}
+.material-label-editor.is-visible {
+  visibility: visible;
+}
+.material-label-editor input {
+  color: var(--muted-foreground);
+}
+.material-output-row {
+  height: 28px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding-right: 12px;
+  position: relative;
+}
+.material-input-row {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  position: relative;
+}
+.material-input-row > span {
+  flex: 1;
+  min-width: 0;
+}
+.material-input-row input[type="number"] {
+  width: 82px;
+  height: 25px;
+  padding: 3px 5px;
+  font-size: 11px;
+}
+.material-node input[type="color"] {
+  width: 56px;
+  height: 24px;
+  padding: 1px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.material-socket {
+  position: absolute;
+  height: 13px;
+  width: 13px;
+  border-radius: 50%;
+  border: 2px solid var(--card);
+  cursor: crosshair;
+  background: var(--chart-2);
+}
+.material-socket::after {
+  content: "";
+  position: absolute;
+  inset: -8px -12px;
+  border-radius: 50%;
+}
+.material-socket:hover,
+.material-socket.is-snapped {
+  outline: 3px solid var(--ring);
+  box-shadow: 0 0 14px var(--ring);
+}
+.material-input-row .material-socket {
+  left: -7px;
+}
+.material-output-row .material-socket {
+  right: -7px;
+}
+.material-socket.kind-color {
+  background: var(--warning);
+}
+.material-socket.kind-vector {
+  background: var(--chart-4);
+}
+.material-socket.kind-shader {
+  background: var(--success);
+}
+.material-socket.is-target {
+  outline: 1px solid var(--ring);
+}
+.material-disconnect {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 10px;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+.material-disconnect span {
+  display: none;
+}
+.material-disconnect svg {
+  opacity: 0.45;
+}
+.material-disconnect:hover svg {
+  opacity: 1;
+}
+.material-node-properties {
+  display: grid;
+  gap: 7px;
+  padding: 9px 12px;
+}
+.material-ramp-preview {
+  height: 24px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.material-ramp-stop {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 56px minmax(0, 1fr);
+  gap: 6px;
+  align-items: end;
+  padding: 7px 0;
+  border-top: 1px solid var(--border);
+}
+.material-ramp-stop > span {
+  grid-column: span 2;
+}
+.material-ramp-stop > button {
+  justify-self: end;
+  cursor: pointer;
+}
+.material-ramp-stop > button:disabled,
+.material-ramp-add:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.material-ramp-stop label {
+  display: grid;
+  gap: 4px;
+  color: var(--muted-foreground);
+}
+.material-ramp-stop input[type="number"] {
+  width: 100%;
+}
+.material-ramp-add {
+  text-align: left;
+  padding: 6px 0;
+  cursor: pointer;
+  color: var(--foreground);
+}
+.material-physical-toggle {
+  display: block;
+  padding: 0 10px;
+  height: 36px;
+  width: 100%;
+  text-align: left;
+  color: var(--muted-foreground);
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+}
+.material-physical-toggle:hover {
+  color: var(--foreground);
+  background: var(--accent);
+}
+.material-node-properties:empty {
+  padding: 3px;
+}
+.material-node-properties input[type="number"],
+.material-node-properties select {
+  width: 100%;
+  height: 26px;
+  font-size: 11px;
+}
+.material-node-properties p {
+  color: var(--warning);
+  font-size: 10px;
+}
+.material-clamp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.material-image-upload {
+  display: block;
+  padding: 6px;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+}
+.material-image-upload input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.material-active-output {
+  text-align: left;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+.material-active-output[aria-pressed="true"] {
+  color: var(--success);
+}
+.material-wires {
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+}
+.material-wires path {
+  fill: none;
+  stroke: var(--chart-2);
+  stroke-width: 2.5;
+  pointer-events: stroke;
+  cursor: pointer;
+  vector-effect: non-scaling-stroke;
+}
+.material-wires .is-pending {
+  stroke: var(--foreground);
+  stroke-linecap: round;
+  pointer-events: none;
+}
+.material-wire-overlay {
+  z-index: 2;
+}
+.material-wires .is-pending.is-snapped {
+  stroke: var(--success);
+  stroke-dasharray: none;
+}
+.material-wires .is-insert-target {
+  stroke: var(--success);
+  stroke-width: 5;
+  filter: drop-shadow(0 0 4px var(--success));
+}
+.material-canvas-hint {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 10px;
+  color: var(--muted-foreground);
+  pointer-events: none;
+}
+.material-editor-status {
+  min-height: 32px;
+  padding: 6px 12px;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  font-size: 10px;
+  color: var(--muted-foreground);
+  border-top: 1px solid var(--border);
+}
+.material-editor-status.has-error > span:first-child {
+  color: var(--warning);
+}
+.material-empty {
+  padding: 30px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}

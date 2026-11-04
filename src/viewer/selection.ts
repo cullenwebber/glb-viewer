@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import type { MeshPhysicalNodeMaterial, Node } from "three/webgpu";
+import { color, vec3 } from "three/tsl";
 /** Temporary viewport styling; source materials are restored before export/load. */
 export class ObjectSelection {
   private originals = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
@@ -19,6 +21,11 @@ export class ObjectSelection {
         if (copy.emissive) {
           copy.emissive.set("#6b9cff");
           copy.emissiveIntensity = 0.35;
+          const nodes = copy as unknown as MeshPhysicalNodeMaterial;
+          if (nodes.emissiveNode)
+            nodes.emissiveNode = vec3(nodes.emissiveNode as Node<"vec3">).add(
+              color("#6b9cff").mul(0.35),
+            );
         } else if (copy.color) copy.color.lerp(new THREE.Color("#6b9cff"), 0.3);
         return copy;
       };

@@ -9,6 +9,7 @@ import {
 } from "../viewer/types";
 import type { ModelFile } from "../model-types";
 import { errorMessage } from "../lib/format";
+import type { MaterialGraph } from "../lib/material-editor";
 export function useModelViewer(onSource: (file: ModelFile) => void) {
   const viewportRef = useRef<HTMLDivElement>(null),
     engine = useRef<ModelViewer | null>(null),
@@ -61,9 +62,19 @@ export function useModelViewer(onSource: (file: ModelFile) => void) {
     () => engine.current?.clearSelection(),
     [],
   );
+  const previewMaterialGraph = useCallback(
+    async (key: string, graph: MaterialGraph) => {
+      if (!engine.current) throw new Error("The 3D renderer is unavailable.");
+      await engine.current.previewMaterialGraph(key, graph);
+    },
+    [],
+  );
   return {
     viewportRef,
+    previewMaterialGraph,
     getUV: (set: number) => engine.current?.getUV(set),
+    setMaterialParameter: (key: string, id: string, value: number) =>
+      engine.current?.setMaterialParameter(key, id, value),
     state,
     display,
     updateDisplay,
@@ -71,6 +82,11 @@ export function useModelViewer(onSource: (file: ModelFile) => void) {
     setSpeed,
     load,
     frame: () => engine.current?.frame(),
+    selectSceneCamera: (id: string) => engine.current?.selectSceneCamera(id),
+    setSceneLights: (enabled: boolean) =>
+      engine.current?.setSceneLights(enabled),
+    setSceneHelpers: (visible: boolean) =>
+      engine.current?.setSceneHelpers(visible),
     selectObject,
     clearSelection,
     focusSourceNode: (index: number) => engine.current?.focusSourceNode(index),
@@ -78,9 +94,14 @@ export function useModelViewer(onSource: (file: ModelFile) => void) {
     play: () => engine.current?.togglePlayback(),
     selectAnimation: (index: number) => engine.current?.selectAnimation(index),
     seek: (time: number) => engine.current?.seek(time),
-    screenshot: () => {
-      engine.current?.screenshot();
-      toast.success("Viewport saved as PNG");
+    screenshot: async () => {
+      try {
+        if (!engine.current) throw new Error("The 3D renderer is unavailable.");
+        await engine.current.screenshot();
+        toast.success("Viewport saved as PNG");
+      } catch (error) {
+        toast.error(errorMessage(error));
+      }
     },
   };
 }

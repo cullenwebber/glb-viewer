@@ -1,7 +1,10 @@
 import * as THREE from "three";
+import { WebGPURenderer, MeshBasicNodeMaterial } from "three/webgpu";
+import { texture as sampleTexture } from "three/tsl";
 import { useBundledWorker } from "./decoder-workers";
 import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
-let gpu: THREE.WebGLRenderer | undefined;
+let gpu: WebGPURenderer | undefined;
+let queue: Promise<unknown> = Promise.resolve();
 let decoder: KTX2Loader | undefined;
 export async function decodePreview(
   bytes: Uint8Array,
@@ -21,7 +24,13 @@ export async function decodePreview(
     bitmap.close();
     return canvas;
   }
-  gpu ||= new THREE.WebGLRenderer({ antialias: false });
+  const task = queue.then(() => decodeKTX(bytes, canvas));
+  queue = task.catch(() => {});
+  return task;
+}
+async function decodeKTX(bytes: Uint8Array, canvas: HTMLCanvasElement) {
+  gpu ||= new WebGPURenderer({ antialias: false });
+  await gpu.init();
   if (!decoder) {
     decoder = new KTX2Loader()
       .setTranscoderPath("./decoders/basis/")
@@ -39,44 +48,48 @@ export async function decodePreview(
     canvas.height = Math.max(1, Math.round(texture.image.height * scale));
     // Render raw sampled values; avoid scene lighting and tone mapping in the debugger.
     texture.colorSpace = THREE.NoColorSpace;
-    const target = new THREE.WebGLRenderTarget(canvas.width, canvas.height);
-    const material = new THREE.ShaderMaterial({
-      uniforms: { map: { value: texture } },
-      vertexShader:
-        "varying vec2 vUv; void main(){vUv=uv; gl_Position=vec4(position.xy,0.,1.);}",
-      fragmentShader:
-        "uniform sampler2D map; varying vec2 vUv; void main(){gl_FragColor=texture2D(map,vUv);}",
-    });
+    const target = new THREE.RenderTarget(canvas.width, canvas.height);
+    const material = new MeshBasicNodeMaterial();
+    material.outputNode = sampleTexture(texture);
     const geometry = new THREE.PlaneGeometry(2, 2);
     const scene = new THREE.Scene();
     scene.add(new THREE.Mesh(geometry, material));
-    gpu.setRenderTarget(target);
-    gpu.render(scene, new THREE.Camera());
-    const pixels = new Uint8Array(canvas.width * canvas.height * 4);
-    gpu.readRenderTargetPixels(
-      target,
-      0,
-      0,
-      canvas.width,
-      canvas.height,
-      pixels,
-    );
-    gpu.setRenderTarget(null);
-    const image = new ImageData(canvas.width, canvas.height);
-    for (let y = 0; y < canvas.height; y++)
-      image.data.set(
-        pixels.subarray(
-          (canvas.height - y - 1) * canvas.width * 4,
-          (canvas.height - y) * canvas.width * 4,
-        ),
-        y * canvas.width * 4,
+    try {
+      gpu.setRenderTarget(target);
+      gpu.render(scene, new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1));
+      const pixels = await gpu.readRenderTargetPixelsAsync(
+        target,
+        0,
+        0,
+        canvas.width,
+        canvas.height,
       );
-    canvas.getContext("2d")!.putImageData(image, 0, 0);
-    texture.dispose();
-    target.dispose();
-    material.dispose();
-    geometry.dispose();
-    return canvas;
+      const image = new ImageData(canvas.width, canvas.height);
+      for (let y = 0; y < canvas.height; y++)
+        image.data.set(
+          pixels.subarray(
+            (gpu.coordinateSystem === THREE.WebGPUCoordinateSystem
+              ? y
+              : canvas.height - y - 1) *
+              canvas.width *
+              4,
+            (gpu.coordinateSystem === THREE.WebGPUCoordinateSystem
+              ? y + 1
+              : canvas.height - y) *
+              canvas.width *
+              4,
+          ),
+          y * canvas.width * 4,
+        );
+      canvas.getContext("2d")!.putImageData(image, 0, 0);
+      return canvas;
+    } finally {
+      gpu.setRenderTarget(null);
+      texture.dispose();
+      target.dispose();
+      material.dispose();
+      geometry.dispose();
+    }
   } finally {
     URL.revokeObjectURL(url);
   }

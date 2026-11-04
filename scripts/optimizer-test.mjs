@@ -7,6 +7,8 @@ import { SphereGeometry } from "three";
 import sharp from "sharp";
 import { read as readKTX } from "ktx-parse";
 import { Optimizer, createIO } from "../electron/optimizer.mjs";
+import { KHRMaterialsClearcoat } from "@gltf-transform/extensions";
+import { BRIDGE_KEY } from "../electron/pipeline/material-graph.mjs";
 export async function fixture(directory) {
   const io = await createIO(),
     doc = new Document(),
@@ -205,6 +207,28 @@ async function test() {
       engine.resultDoc.getRoot().listTextures()[0].getImage(),
     );
     assert.equal(singleMip.levels.length, 1);
+    const compressedSource = path.join(directory, "compressed-source.glb");
+    await writeFile(compressedSource, engine.output);
+    const compressedEngine = new Optimizer();
+    const compressedAnalysis = await compressedEngine.open(compressedSource);
+    const compressedRemoved = await compressedEngine.optimize({
+      geometry: "none",
+      textures: compressedAnalysis.textures.map((texture) => ({
+        id: texture.id,
+        maxSize: 0,
+        format: "keep",
+        remove: texture.id === 0,
+      })),
+      packs: [],
+    });
+    assert.equal(compressedRemoved.textures.length, 3);
+    assert.equal(
+      compressedEngine.resultDoc
+        .getRoot()
+        .listMaterials()[0]
+        .getBaseColorTexture(),
+      null,
+    );
     assert.equal(
       engine.resultDoc
         .getRoot()
@@ -279,6 +303,127 @@ async function test() {
           ].map(async (name) => (await stat(path.join(directory, name))).size),
         )
       ).reduce((a, b) => a + b, 0),
+    );
+    const removed = await engine.optimize({
+      geometry: "none",
+      textures: settings.map((setting) => ({
+        ...setting,
+        remove: [1, 2].includes(setting.id),
+      })),
+      packs: [],
+    });
+    assert.equal(removed.textures.length, 2);
+    const removedMaterial = engine.resultDoc.getRoot().listMaterials()[0];
+    assert.equal(removedMaterial.getNormalTexture(), null);
+    assert.equal(removedMaterial.getOcclusionTexture(), null);
+    assert(removedMaterial.getBaseColorTexture());
+    assert(removedMaterial.getMetallicRoughnessTexture());
+    assert.equal(removedMaterial.getRoughnessFactor(), 0.7);
+    assert.equal(
+      removed.comparisons.find((row) => row.key === "t1").outputId,
+      null,
+    );
+    assert.equal(
+      removed.comparisons.find((row) => row.key === "t2").afterBytes,
+      0,
+    );
+    assert(engine.original.getRoot().listMaterials()[0].getNormalTexture());
+    const keptAgain = await engine.optimize({
+      geometry: "none",
+      textures: settings,
+      packs: [],
+    });
+    assert.equal(keptAgain.textures.length, 4);
+    await assert.rejects(
+      () =>
+        engine.optimize({
+          geometry: "none",
+          textures: settings.map((setting) => ({
+            ...setting,
+            remove: setting.id === 2,
+          })),
+          packs: [pack],
+        }),
+      /marked for removal.*packing/,
+    );
+    await assert.rejects(
+      () =>
+        engine.optimize({
+          geometry: "none",
+          textures: [{ ...settings[0], remove: "yes" }],
+          packs: [],
+        }),
+      /removal setting/,
+    );
+    await assert.rejects(
+      () =>
+        engine.optimize({
+          geometry: "none",
+          textures: [settings[0], settings[0]],
+          packs: [],
+        }),
+      /duplicated/,
+    );
+    const allRemoved = await engine.optimize({
+      geometry: "none",
+      textures: settings.map((setting) => ({ ...setting, remove: true })),
+      packs: [],
+    });
+    assert.equal(allRemoved.textures.length, 0);
+    assert.equal(
+      (await io.readBinary(engine.output)).getRoot().listTextures().length,
+      0,
+    );
+    const originalMaterial = doc.getRoot().listMaterials()[0];
+    originalMaterial.setExtras({
+      [BRIDGE_KEY]: "embedded graph",
+      retained: "yes",
+    });
+    const shared = doc
+      .createMaterial("Shared image")
+      .setNormalTexture(doc.getRoot().listTextures()[1]);
+    shared.setExtension(
+      "KHR_materials_clearcoat",
+      doc
+        .createExtension(KHRMaterialsClearcoat)
+        .createClearcoat()
+        .setClearcoatNormalTexture(doc.getRoot().listTextures()[1]),
+    );
+    const sharedFile = path.join(directory, "shared.glb");
+    await writeFile(sharedFile, await io.writeBinary(doc));
+    const sharedEngine = new Optimizer();
+    await sharedEngine.open(sharedFile);
+    const sharedRemoved = await sharedEngine.optimize({
+      geometry: "none",
+      textures: settings.map((setting) => ({
+        ...setting,
+        remove: setting.id === 1,
+      })),
+      packs: [],
+    });
+    const sharedMaterials = sharedEngine.resultDoc.getRoot().listMaterials();
+    assert(
+      sharedMaterials.every((material) => material.getNormalTexture() === null),
+    );
+    assert.equal(
+      sharedMaterials
+        .find((material) => material.getName() === "Shared image")
+        .getExtension("KHR_materials_clearcoat")
+        .getClearcoatNormalTexture(),
+      null,
+    );
+    assert.equal(sharedMaterials[0].getExtras()[BRIDGE_KEY], undefined);
+    assert.equal(sharedMaterials[0].getExtras().retained, "yes");
+    assert(
+      sharedRemoved.warnings.some((warning) =>
+        warning.includes("embedded Blender shader graph"),
+      ),
+    );
+    assert.equal(
+      sharedEngine.original.getRoot().listMaterials()[0].getExtras()[
+        BRIDGE_KEY
+      ],
+      "embedded graph",
     );
     assert.deepEqual(await readFile(file), unchanged);
     console.log(

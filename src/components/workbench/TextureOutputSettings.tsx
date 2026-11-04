@@ -5,17 +5,30 @@ import {
 } from "@/components/ui/native-select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CompressionControls } from "./CompressionControls";
+import { Button } from "@/components/ui/button";
+import { Trash2, RotateCcw } from "lucide-react";
+import {
+  textureSettingStatus,
+  textureStatusLabels,
+} from "@/lib/texture-settings";
 import { bytesLabel } from "@/lib/format";
 import type { TextureInfo, TextureSetting } from "@/model-types";
 export function TextureOutputSettings({
   texture,
   setting,
   onChange,
+  busy = false,
+  packingUses = [],
 }: {
   texture: TextureInfo;
   setting: TextureSetting;
   onChange: (update: Partial<TextureSetting>) => void;
+  busy?: boolean;
+  packingUses?: string[];
 }) {
+  const status = textureSettingStatus(texture, setting);
+  const disabled =
+    busy || !texture.editable || texture.inputOnly || setting.remove;
   return (
     <div className="texture-output-settings">
       <section>
@@ -56,6 +69,9 @@ export function TextureOutputSettings({
       </section>
       <section>
         <h3 className="section-heading">Output settings</h3>
+        <p className={`texture-state is-${status} mb-3`}>
+          {textureStatusLabels[status]}
+        </p>
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="wb-resize" className="text-xs">
@@ -64,7 +80,7 @@ export function TextureOutputSettings({
             <NativeSelect
               id="wb-resize"
               value={setting.maxSize}
-              disabled={!texture.editable || texture.inputOnly}
+              disabled={disabled}
               onChange={(event) =>
                 onChange({ maxSize: Number(event.target.value) })
               }
@@ -84,7 +100,7 @@ export function TextureOutputSettings({
             <NativeSelect
               id="wb-format"
               value={setting.format}
-              disabled={!texture.editable || texture.inputOnly}
+              disabled={disabled}
               onChange={(event) =>
                 onChange({ format: event.target.value, compression: {} })
               }
@@ -107,9 +123,20 @@ export function TextureOutputSettings({
           <CompressionControls
             format={setting.format}
             options={setting.compression}
-            disabled={!texture.editable || texture.inputOnly}
+            disabled={disabled}
             onChange={(compression) => onChange({ compression })}
           />
+          <Button
+            id="wb-reset-texture"
+            size="sm"
+            variant="outline"
+            disabled={busy || status !== "configured"}
+            onClick={() =>
+              onChange({ maxSize: 0, format: "keep", compression: {} })
+            }
+          >
+            <RotateCcw /> Reset output settings
+          </Button>
           <p className="text-[11px] leading-relaxed text-muted-foreground">
             Changes apply to every material using this image. Aspect ratio is
             preserved.
@@ -122,6 +149,34 @@ export function TextureOutputSettings({
           )}
         </div>
       </section>
+      {!texture.inputOnly && (
+        <section>
+          <h3 className="section-heading">Remove texture</h3>
+          <p className="mb-3 text-[11px] leading-relaxed text-muted-foreground">
+            {setting.remove
+              ? "Marked for removal. Run optimization to remove this image from every material using it. Keep it to restore your previous settings."
+              : "Remove this image and all its material assignments from the optimized model. Material factors remain unchanged. The original model and image files are never modified."}
+          </p>
+          {packingUses.length > 0 && !setting.remove && (
+            <p className="mb-3 text-[11px] text-muted-foreground">
+              Used by {packingUses.join(", ")}. Remove it from those packing
+              recipes first.
+            </p>
+          )}
+          <Button
+            id="wb-remove-texture"
+            size="sm"
+            variant={setting.remove ? "outline" : "destructive"}
+            disabled={busy || (!setting.remove && packingUses.length > 0)}
+            onClick={() => onChange({ remove: !setting.remove })}
+          >
+            {setting.remove ? <RotateCcw /> : <Trash2 />}
+            {setting.remove
+              ? "Keep this texture"
+              : "Remove from optimized model"}
+          </Button>
+        </section>
+      )}
       <section>
         <h3 className="section-heading">Usage</h3>
         <p className="text-[11px] leading-relaxed text-muted-foreground">

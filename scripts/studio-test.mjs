@@ -108,7 +108,17 @@ try {
   const generated = path.join(process.cwd(), ".handoff-test-" + Date.now());
   await mkdir(generated);
   try {
-    for (const name of ["load-model.ts", "model-types.ts", "Model.tsx"])
+    for (const name of [
+      "load-model.ts",
+      "model-types.ts",
+      "Model.tsx",
+      "materials.ts",
+      "material-graph.mjs",
+      "material-graph.d.mts",
+      "material-runtime.mjs",
+      "material-runtime.d.mts",
+      "WebGPUCanvas.tsx",
+    ])
       await writeFile(
         path.join(generated, name),
         await readFile(path.join(bundle, name)),
@@ -128,9 +138,12 @@ try {
         "Bundler",
         "--jsx",
         "react-jsx",
-        ...["load-model.ts", "model-types.ts", "Model.tsx"].map((name) =>
-          path.join(generated, name),
-        ),
+        ...[
+          "load-model.ts",
+          "model-types.ts",
+          "Model.tsx",
+          "WebGPUCanvas.tsx",
+        ].map((name) => path.join(generated, name)),
       ],
       { stdio: "pipe" },
     );

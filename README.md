@@ -11,6 +11,10 @@ A local-first Mac app for preparing Blender assets for Three.js.
 - Labelled tool navigation and draggable panel widths.
 
 - GLB/glTF preview, scene selection, mesh isolation, and animation playback.
+- WebGPU rendering with Three.js's WebGL 2 fallback backend.
+- A Materials node workspace with live TSL previews, socket wiring, undo/redo, and graph/TypeScript exports.
+- A Blender add-on for atomic, watched exports with embedded material graphs.
+- Procedural noise nodes and physical glass/coat/sheen inputs, plus imported camera views and scene-light helpers.
 - Vertex/face normals, bones, bone weights, face orientation, and cost heatmaps.
 - Material solo views, UV checker, and UV layout inspection.
 - Texture pan/zoom, channel debugging, individual resizing, and channel packing.
@@ -23,6 +27,14 @@ A local-first Mac app for preparing Blender assets for Three.js.
 - Actual before/after file sizes, draw calls, load timings, and memory estimates.
 - Models stay local; source files are preserved.
 
+## Blender and material nodes
+
+Download the Blender add-on from **Export → Blender bridge**, or build it with `npm run build` to create `dist/glb-viewer-bridge.zip`. Install the ZIP in Blender 4.2+, open the **GLB Viewer** sidebar, choose an output folder, and click **Send to GLB Viewer**. Open its `model.glb` here once and enable **Watch exports**. Blender can also export automatically after saving the `.blend` file.
+
+Open **Materials** to add and connect supported nodes, edit values and image textures, and preview them on a selected material. **Save graph** creates an editable JSON file; **Export TSL** creates a standalone Three.js material factory. Editor drafts last for this session and are exported separately, not baked into optimized GLBs. Unsupported Blender graphs retain glTF fallback materials with diagnostics. This is a supported-node translator, not full Cycles parity or two-way Blender synchronization.
+
+See [Blender bridge and node editor](docs/blender-bridge.md) for supported nodes, shortcuts, and integration.
+
 ## Development
 
 - Requires Node.js 22.12+ and npm.
@@ -30,6 +42,7 @@ A local-first Mac app for preparing Blender assets for Three.js.
 - Run: `npm run desktop`
 - Hot reload: `npm run desktop:dev`
 - Test: `npm test`
+- Blender integration: `npm run test:blender` (set `BLENDER` if needed; add `BLENDER_UI_TEST=1` to exercise real Blender exports in the app after a build).
 - Package: `npm run package:mac`
 - Build DMG/ZIP: `npm run dist:mac`
 - Built with Electron, React, Three.js, and [shadcn/ui](https://ui.shadcn.com/).

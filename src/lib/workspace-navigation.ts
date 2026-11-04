@@ -5,6 +5,7 @@ export const workspaceSections = [
     pages: [
       { id: "model", label: "Model" },
       { id: "textures", label: "Textures" },
+      { id: "materials", label: "Materials" },
       { id: "checks", label: "Checks" },
       { id: "performance", label: "Performance" },
     ],

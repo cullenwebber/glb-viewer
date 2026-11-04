@@ -1,4 +1,10 @@
-import { ImagePlus, ImageIcon, Search } from "lucide-react";
+import {
+  ImagePlus,
+  ImageIcon,
+  Search,
+  CircleCheck,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,23 +14,44 @@ import {
   NativeSelectOption,
 } from "@/components/ui/native-select";
 import { bytesLabel } from "@/lib/format";
-import type { TextureInfo } from "@/model-types";
+import type { TextureInfo, TextureSetting } from "@/model-types";
+import {
+  textureSettingStatus,
+  textureStatusLabels,
+} from "@/lib/texture-settings";
 export function TextureList({
   textures,
+  settings,
   selected,
   onSelect,
   onImport,
 }: {
   textures: TextureInfo[];
+  settings: TextureSetting[];
   selected: number;
   onSelect: (id: number) => void;
   onImport: () => void;
 }) {
   const [query, setQuery] = useState(""),
-    [sort, setSort] = useState("size");
+    [sort, setSort] = useState("size"),
+    [filter, setFilter] = useState("all");
+  const settingsById = new Map(
+    settings.map((setting) => [setting.id, setting]),
+  );
+  const status = (texture: TextureInfo) =>
+    textureSettingStatus(texture, settingsById.get(texture.id));
+  const modelTextures = textures.filter((texture) => !texture.inputOnly);
+  const configured = modelTextures.filter(
+    (texture) => status(texture) === "configured",
+  ).length;
+  const removed = textures.filter(
+    (texture) => status(texture) === "removed",
+  ).length;
   const rows = [...textures]
-    .filter((texture) =>
-      texture.name.toLowerCase().includes(query.toLowerCase()),
+    .filter(
+      (texture) =>
+        texture.name.toLowerCase().includes(query.toLowerCase()) &&
+        (filter === "all" || status(texture) === filter),
     )
     .sort((a, b) =>
       sort === "size" ? b.bytes - a.bytes : a.name.localeCompare(b.name),
@@ -66,6 +93,30 @@ export function TextureList({
           <NativeSelectOption value="name">Name</NativeSelectOption>
         </NativeSelect>
       </div>
+      <div
+        className="texture-status-summary"
+        role="status"
+        aria-label="Texture configuration progress"
+      >
+        {configured} / {modelTextures.length} configured
+        {removed ? ` · ${removed} to remove` : ""}
+      </div>
+      <div className="texture-status-filter">
+        <NativeSelect
+          aria-label="Filter textures by status"
+          value={filter}
+          onChange={(event) => setFilter(event.target.value)}
+          className="w-full text-[11px]"
+        >
+          <NativeSelectOption value="all">All images</NativeSelectOption>
+          <NativeSelectOption value="unchanged">Unchanged</NativeSelectOption>
+          <NativeSelectOption value="configured">Configured</NativeSelectOption>
+          <NativeSelectOption value="removed">
+            Marked for removal
+          </NativeSelectOption>
+          <NativeSelectOption value="input">Packing inputs</NativeSelectOption>
+        </NativeSelect>
+      </div>
       <ScrollArea className="min-h-0 flex-1">
         <div id="wb-texture-list" className="space-y-0.5 p-2">
           {rows.map((texture) => (
@@ -73,6 +124,8 @@ export function TextureList({
               key={texture.id}
               variant={texture.id === selected ? "secondary" : "ghost"}
               data-texture={texture.id}
+              data-texture-status={status(texture)}
+              aria-label={`${texture.name} · ${textureStatusLabels[status(texture)]}`}
               className="texture-list-item"
               onClick={() => onSelect(texture.id)}
             >
@@ -89,9 +142,18 @@ export function TextureList({
                   {texture.width} × {texture.height}
                 </span>
               </div>
-              <span className="texture-list-size">
-                {bytesLabel(texture.bytes)}
-              </span>
+              <div className="texture-list-meta">
+                <span className="texture-list-size">
+                  {bytesLabel(texture.bytes)}
+                </span>
+                <span className={`texture-state is-${status(texture)}`}>
+                  {status(texture) === "configured" && (
+                    <CircleCheck size={11} />
+                  )}
+                  {status(texture) === "removed" && <Trash2 size={11} />}
+                  {textureStatusLabels[status(texture)]}
+                </span>
+              </div>
             </Button>
           ))}
           {!rows.length && (

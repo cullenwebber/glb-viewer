@@ -1,5 +1,19 @@
 import * as THREE from "three";
-import { textureMemory } from "./performance.ts";
+import {
+  MeshBasicNodeMaterial,
+  type MeshPhysicalNodeMaterial,
+  type Node,
+} from "three/webgpu";
+import {
+  attribute,
+  float,
+  frontFacing,
+  mix,
+  texture,
+  varying,
+  vec3,
+} from "three/tsl";
+import { textureMemory, materialTextures } from "./performance.ts";
 import type { DisplaySettings } from "./types";
 export type UVSnapshot = {
   name: string;
@@ -35,8 +49,8 @@ export class MaterialInspection {
       if (settings.costMetric === "textures") {
         const textures = new Set<THREE.Texture>();
         for (const material of materials)
-          for (const value of Object.values(material))
-            if (value instanceof THREE.Texture) textures.add(value);
+          for (const texture of materialTextures(material))
+            textures.add(texture);
         return textureMemory(textures);
       }
       return (
@@ -56,6 +70,7 @@ export class MaterialInspection {
       this.originals.set(mesh, original);
       const make = (source: THREE.Material) => {
         const p = source as THREE.MeshStandardMaterial;
+        const nodes = source as MeshPhysicalNodeMaterial;
         let material: THREE.Material;
         if (settings.inspection === "normals")
           material = new THREE.MeshNormalMaterial({
@@ -63,7 +78,7 @@ export class MaterialInspection {
             wireframe: settings.wireframe,
           });
         else {
-          const basic = new THREE.MeshBasicMaterial({
+          const basic = new MeshBasicNodeMaterial({
             side:
               settings.inspection === "orientation"
                 ? THREE.DoubleSide
@@ -74,6 +89,7 @@ export class MaterialInspection {
           if (mode === "baseColor") {
             basic.map = p.map;
             basic.color.copy(p.color || new THREE.Color(1, 1, 1));
+            if (nodes.colorNode) basic.colorNode = nodes.colorNode;
           }
           if (mode === "normalMap") {
             if (p.normalMap) {
@@ -128,23 +144,26 @@ export class MaterialInspection {
               metalness: "b",
               ao: "r",
               alpha: p.alphaMap ? "g" : "a",
-            };
+            } as const;
             const key = mode as keyof typeof maps;
-            basic.map = maps[key] || null;
-            basic.onBeforeCompile = (shader) => {
-              shader.fragmentShader = shader.fragmentShader.replace(
-                "#include <map_fragment>",
-                `#include <map_fragment>\n diffuseColor.rgb = vec3(${basic.map ? `sampledDiffuseColor.${channels[key]}` : "1.0"} * ${Number(factors[key]).toFixed(6)});`,
-              );
-            };
+            const map = maps[key];
+            basic.colorNode = vec3(
+              (map ? texture(map)[channels[key]] : float(1)).mul(factors[key]),
+            );
+            const channelNode = {
+              roughness: nodes.roughnessNode,
+              metalness: nodes.metalnessNode,
+              alpha: nodes.opacityNode,
+              ao: null,
+            }[key];
+            if (channelNode)
+              basic.colorNode = vec3(channelNode as Node<"float">);
           }
           if (mode === "orientation")
-            basic.onBeforeCompile = (shader) => {
-              shader.fragmentShader = shader.fragmentShader.replace(
-                "#include <opaque_fragment>",
-                "outgoingLight = gl_FrontFacing ? vec3(0.12,0.32,0.95) : vec3(0.95,0.12,0.08);\n#include <opaque_fragment>",
-              );
-            };
+            basic.colorNode = frontFacing.select(
+              vec3(0.12, 0.32, 0.95),
+              vec3(0.95, 0.12, 0.08),
+            );
           if (mode === "weights") {
             const skin = mesh as THREE.SkinnedMesh;
             const index = skin.isSkinnedMesh
@@ -152,23 +171,23 @@ export class MaterialInspection {
                   (bone) => bone.uuid === settings.weightBone,
                 )
               : -1;
-            basic.onBeforeCompile = (shader) => {
-              shader.vertexShader =
-                `varying float vInspectionWeight;\n` + shader.vertexShader;
-              shader.vertexShader = shader.vertexShader.replace(
-                "#include <begin_vertex>",
-                `#include <begin_vertex>\nvInspectionWeight = 0.0;\n${index >= 0 ? `#ifdef USE_SKINNING\nvInspectionWeight = dot(skinWeight, vec4(equal(skinIndex, vec4(${index}.0))));\n#endif` : ""}`,
-              );
-              shader.fragmentShader =
-                `varying float vInspectionWeight;\n` + shader.fragmentShader;
-              shader.fragmentShader = shader.fragmentShader.replace(
-                "#include <opaque_fragment>",
-                "outgoingLight = mix(vec3(0.04,0.1,0.7), vec3(1.0,0.05,0.0), clamp(vInspectionWeight,0.0,1.0));\n#include <opaque_fragment>",
-              );
-            };
+            let weight = float(0).add(0);
+            if (index >= 0) {
+              const indices = attribute("skinIndex", "vec4"),
+                weights = attribute("skinWeight", "vec4");
+              for (const channel of ["x", "y", "z", "w"] as const)
+                weight = weight.add(
+                  indices[channel]
+                    .equal(index)
+                    .select(weights[channel], float(0)),
+                );
+            }
+            basic.colorNode = mix(
+              vec3(0.04, 0.1, 0.7),
+              vec3(1, 0.05, 0),
+              varying(weight).clamp(0, 1),
+            );
           }
-          basic.customProgramCacheKey = () =>
-            `${mode}-${source.uuid}-${settings.weightBone}`;
           material = basic;
         }
         this.temporary.push(material);

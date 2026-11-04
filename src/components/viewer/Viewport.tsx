@@ -24,7 +24,10 @@ export function Viewport({
       <div id="viewport" ref={viewer.viewportRef} className="model-viewport">
         <div className="viewport-toolbar">
           <div className="viewport-mode">
-            <span>Perspective</span>
+            <span title={state.rendererBackend}>
+              {state.sceneCameraId ? "Scene camera" : "Perspective"} ·{" "}
+              {state.rendererBackend}
+            </span>
             <span className="mode-divider" />
             <span id="view-mode">
               {display.inspection !== "material"
@@ -35,6 +38,47 @@ export function Viewport({
             </span>
           </div>
           <div className="flex items-center gap-1">
+            {state.sceneCameras.length > 0 && (
+              <select
+                aria-label="Viewport camera"
+                value={state.sceneCameraId}
+                onChange={(event) =>
+                  viewer.selectSceneCamera(event.target.value)
+                }
+                className="max-w-40 rounded border border-border bg-background px-2 py-1 text-xs"
+              >
+                <option value="">Orbit camera</option>
+                {state.sceneCameras.map((camera) => (
+                  <option key={camera.id} value={camera.id}>
+                    {camera.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            {state.sceneLights.length > 0 && (
+              <Button
+                variant={state.sceneLightsEnabled ? "secondary" : "ghost"}
+                size="sm"
+                aria-pressed={state.sceneLightsEnabled}
+                onClick={() => viewer.setSceneLights(!state.sceneLightsEnabled)}
+                title={state.sceneLights
+                  .map((light) => `${light.name} (${light.type})`)
+                  .join("\n")}
+              >
+                Scene lights ({state.sceneLights.length})
+              </Button>
+            )}
+            {(state.sceneCameras.length > 0 ||
+              state.sceneLights.length > 0) && (
+              <Button
+                variant={state.sceneHelpers ? "secondary" : "ghost"}
+                size="sm"
+                aria-pressed={state.sceneHelpers}
+                onClick={() => viewer.setSceneHelpers(!state.sceneHelpers)}
+              >
+                Camera/light helpers
+              </Button>
+            )}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

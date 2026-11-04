@@ -14,7 +14,7 @@ Installers use `GLB-Viewer-<version>-<arch>.dmg` and `.zip`. Release metadata an
 
 ## Apple signing and notarization
 
-Unsigned builds use manual updates. If you are not enrolled yet:
+Without Apple credentials, the workflow ad-hoc signs the app without hardened runtime, because Apple Silicon reports an unsigned Electron bundle as damaged. Ad-hoc builds are not notarized, so users must approve the first launch, and they use manual updates. If you are not enrolled yet:
 
 1. [Enroll in the Apple Developer Program](https://developer.apple.com/programs/enroll/) using your own Apple Account. Apple lists an annual fee of US$99 or local pricing and verifies your identity during enrollment.
 2. After approval, follow [Apple's Developer ID certificate instructions](https://developer.apple.com/help/account/certificates/create-developer-id-certificates/) to create a **Developer ID Application** certificate. This is the certificate for signing an app distributed outside the Mac App Store.

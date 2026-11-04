@@ -41,14 +41,22 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          sign_args=()
           if [ -z "$CSC_LINK" ]; then
             unset CSC_LINK CSC_KEY_PASSWORD
             export CSC_IDENTITY_AUTO_DISCOVERY=false
+            # Apple Silicon reports an unsigned Electron bundle as "damaged".
+            sign_args=(-c.mac.identity=- -c.mac.hardenedRuntime=false)
           fi
           if [ -z "$APPLE_ID" ]; then
             unset APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID
           fi
-          npx electron-builder --mac dmg zip --arm64 --x64 --publish never
+          npx electron-builder --mac dmg zip --arm64 --x64 --publish never "${sign_args[@]}"
+      - name: Verify app signatures
+        run: |
+          for app in release/mac*/*.app; do
+            codesign --verify --deep --strict --verbose=2 "$app"
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: mac-installers

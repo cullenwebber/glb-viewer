@@ -8,7 +8,7 @@ A macOS desktop workspace for inspecting, debugging, comparing, and optimizing G
 
 ## Install
 
-Choose the **arm64** DMG for Apple Silicon or **x64** for Intel, open it, and copy GLB Viewer to Applications. Initial unsigned builds use manual updates; Developer ID-signed builds can install updates from inside the app. **Updates** checks GitHub for a newer release. Presets, budgets, and optimization history survive app replacement.
+Choose the **arm64** DMG for Apple Silicon or **x64** for Intel, open it, and copy GLB Viewer to Applications. Builds are not notarized by Apple yet, so macOS warns on first launch: open **System Settings → Privacy & Security** and click **Open Anyway**. Updates are installed manually from the releases page; presets, budgets, and history are retained.
 
 ## Run
 

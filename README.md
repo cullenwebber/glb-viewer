@@ -86,6 +86,46 @@ The app opens with this demo model so you can try every tool straight away: [Lit
 - Build DMG/ZIP: `npm run dist:mac`
 - Built with Electron, React, Three.js, and [shadcn/ui](https://ui.shadcn.com/).
 
+## Windows
+
+Requires Windows 11, Node.js 22.12+ and npm. From the repository root in
+PowerShell, install dependencies and build the unpacked app:
+
+```powershell
+npm ci
+npm run package:win
+```
+
+Use `npm run dist:win` instead to build a portable executable in `release`.
+Build and launch with `npm run desktop:win`, or run the unpacked executable
+directly. Pass a model path as its argument to open that model:
+
+```powershell
+& ".\release\win-unpacked\GLB Viewer.exe"
+& ".\release\win-unpacked\GLB Viewer.exe" "C:\Models\model.glb"
+```
+
+Windows uses a standard window frame with an automatically hidden menu bar.
+It does not check for updates or auto-update. Builds are unsigned, so Windows
+SmartScreen may warn when opening the portable build.
+
+Run the test suite with `npm test`. To test the packaged app, set
+`SMOKE_APP_PATH` to its executable; the Electron tests use it in place of the
+development build:
+
+```powershell
+$env:SMOKE_APP_PATH = "$PWD\release\win-unpacked\GLB Viewer.exe"
+node scripts/smoke-test.mjs
+npm run test:open-file
+# Or run the full suite against the packaged app:
+npm test
+Remove-Item Env:SMOKE_APP_PATH
+```
+
+The open-file test opens `assets/samples/LittlestTokyo.glb` by default.
+Set `OPEN_FILE_TEST_GLB` to test another model and `OPEN_FILE_TEST_SHOT` to
+choose the screenshot path.
+
 ## Releases and updates
 
 - Version tags trigger tested Apple Silicon and Intel release builds.

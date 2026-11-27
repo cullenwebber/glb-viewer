@@ -114,9 +114,11 @@ try {
     file,
   );
   await page.locator("#filename").filter({ hasText: name }).waitFor();
-  await app.evaluate(({ BrowserWindow }) =>
-    BrowserWindow.getAllWindows()[0].setSize(960, 720),
-  );
+  await app.evaluate(({ BrowserWindow }) => {
+    const window = BrowserWindow.getAllWindows()[0];
+    if (process.platform === "win32") window.setContentSize(960, 720);
+    else window.setSize(960, 720);
+  });
   await page.waitForFunction(() => innerWidth === 960);
   const layout = await page.evaluate(() => {
     const rect = (selector) => {
@@ -140,9 +142,11 @@ try {
   await page.screenshot({
     path: path.join(tmpdir(), "glb-navigation-960.png"),
   });
-  await app.evaluate(({ BrowserWindow }) =>
-    BrowserWindow.getAllWindows()[0].setSize(1440, 960),
-  );
+  await app.evaluate(({ BrowserWindow }) => {
+    const window = BrowserWindow.getAllWindows()[0];
+    if (process.platform === "win32") window.setContentSize(1440, 960);
+    else window.setSize(1440, 960);
+  });
   await page.waitForFunction(() => innerWidth === 1440);
   await page.screenshot({
     path: path.join(tmpdir(), "glb-navigation-1440.png"),

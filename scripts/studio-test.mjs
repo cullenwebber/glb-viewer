@@ -123,9 +123,13 @@ try {
         path.join(generated, name),
         await readFile(path.join(bundle, name)),
       );
+    const typescript = JSON.parse(
+      await readFile(path.resolve("node_modules/typescript/package.json"), "utf8"),
+    );
     execFileSync(
-      path.resolve("node_modules/.bin/tsc"),
+      process.execPath,
       [
+        path.resolve("node_modules/typescript", typescript.bin.tsc),
         "--ignoreConfig",
         "--noEmit",
         "--strict",

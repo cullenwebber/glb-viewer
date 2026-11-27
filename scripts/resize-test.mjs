@@ -36,9 +36,11 @@ async function launch() {
   page.setDefaultTimeout(20000);
   // macOS may constrain the initial BrowserWindow to the hosted runner's screen.
   // Use a known workspace width for the large-drag and persistence assertions.
-  await app.evaluate(({ BrowserWindow }) =>
-    BrowserWindow.getAllWindows()[0].setSize(1440, 960),
-  );
+  await app.evaluate(({ BrowserWindow }) => {
+    const window = BrowserWindow.getAllWindows()[0];
+    if (process.platform === "win32") window.setContentSize(1440, 960);
+    else window.setSize(1440, 960);
+  });
   await page.waitForFunction(() => innerWidth === 1440);
   await page.locator("#triangles").filter({ hasText: "12,800" }).waitFor();
   return page;
@@ -141,9 +143,11 @@ try {
     Math.abs((await width(page, ".scene-sidebar")) - originalScene) < 6,
     "double click resets widths",
   );
-  await app.evaluate(({ BrowserWindow }) =>
-    BrowserWindow.getAllWindows()[0].setSize(960, 720),
-  );
+  await app.evaluate(({ BrowserWindow }) => {
+    const window = BrowserWindow.getAllWindows()[0];
+    if (process.platform === "win32") window.setContentSize(960, 720);
+    else window.setSize(960, 720);
+  });
   await page.waitForFunction(() => innerWidth === 960);
   await drag(page, "#model-panels-left-divider", 800);
   assert((await width(page, ".viewer-main")) >= 238);

@@ -62,7 +62,7 @@ export class Optimizer {
     const files = new Map();
     this.io.readURI = async (uri, type) => {
       assert(
-        !/^[a-z][a-z0-9+.-]*:/i.test(uri),
+        !/^[a-z][a-z0-9+.-]+:/i.test(uri),
         "Only local model resources are supported.",
       );
       const resolved = await realpath(uri),

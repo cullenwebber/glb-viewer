@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, writeFile, rm } from "node:fs/promises";
+import { mkdir, writeFile, readFile, rm } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -422,9 +422,13 @@ try {
     await writeFile(utilityFile, materialModule(utilityGraph));
     utilityFiles.push(utilityFile);
   }
+  const typescript = JSON.parse(
+    await readFile(path.resolve("node_modules/typescript/package.json"), "utf8"),
+  );
   execFileSync(
-    path.resolve("node_modules/.bin/tsc"),
+    process.execPath,
     [
+      path.resolve("node_modules/typescript", typescript.bin.tsc),
       "--ignoreConfig",
       "--noEmit",
       "--strict",

@@ -4,13 +4,17 @@ import path from "node:path";
 const env = { ...process.env };
 delete env.ELECTRON_RUN_AS_NODE;
 const args = process.argv.slice(2),
-  packaged = args.includes("--packaged") && process.platform === "darwin";
+  packaged =
+    args.includes("--packaged") &&
+    (process.platform === "darwin" || process.platform === "win32");
 const executable = packaged
-  ? path.resolve(
-      "release",
-      process.arch === "arm64" ? "mac-arm64" : "mac",
-      "GLB Viewer.app/Contents/MacOS/GLB Viewer",
-    )
+  ? process.platform === "win32"
+    ? path.resolve("release", "win-unpacked", "GLB Viewer.exe")
+    : path.resolve(
+        "release",
+        process.arch === "arm64" ? "mac-arm64" : "mac",
+        "GLB Viewer.app/Contents/MacOS/GLB Viewer",
+      )
   : electron;
 const child = spawn(
   executable,

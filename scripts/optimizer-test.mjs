@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, writeFile, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { Document } from "@gltf-transform/core";
 import { SphereGeometry } from "three";
 import sharp from "sharp";
@@ -433,4 +434,6 @@ async function test() {
     await rm(directory, { recursive: true, force: true });
   }
 }
-if (process.argv[1] === new URL(import.meta.url).pathname) await test();
+// Compare file paths, not a file path with a URL pathname: on Windows the pathname reads "/C:/..." and the test
+// body silently never ran.
+if (path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await test();

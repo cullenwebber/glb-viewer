@@ -22,6 +22,7 @@ try {
       name: app.getName(),
       title: BrowserWindow.getAllWindows()[0].getTitle(),
       process: process.title,
+      execPath: process.execPath,
       menu: Menu.getApplicationMenu().items[0].label,
       userData: app.getPath("userData"),
       icon: nativeImage
@@ -31,7 +32,10 @@ try {
   );
   assert.equal(identity.name, "GLB Viewer");
   assert.equal(identity.title, "GLB Viewer");
-  assert.equal(identity.process, "GLB Viewer");
+  assert.equal(
+    identity.process,
+    process.platform === "win32" ? identity.execPath : "GLB Viewer",
+  );
   assert.equal(identity.menu, "GLB Viewer");
   assert.equal(identity.userData, directory);
   assert.equal(identity.icon.width, 512);
